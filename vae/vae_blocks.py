@@ -39,4 +39,6 @@ class ResBlock(nn.Module):
 
 class AttentionBlock(nn.Module):
     def __init__(self, channels: int):
-        pass
+        super.__init__()
+        
+        self.groupnorm = nn.GroupNorm(32, channels)
