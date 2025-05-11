@@ -23,15 +23,13 @@ where $\alpha_t \in (0, 1)$ controls the amount of signal retained at each step,
 
 \section*{Recursive Substitution}
 
-By repeatedly applying the forward process from $x_0$ to $x_t$, we can marginalize out all intermediate steps. The key insight from the DDPM paper is that the marginal distribution of $x_t$ given $x_0$ is also Gaussian:
+By repeatedly applying the forward process from $x_0$ to $x_t$, we can marginalize out all intermediate steps. \textbf{The key insight from the DDPM paper is that the marginal distribution of $x_t$ given $x_0$ is also Gaussian:}
 
 \begin{equation}
 q(x_t \mid x_0) = \mathcal{N}(x_t; \sqrt{\bar{\alpha}_t} x_0, (1 - \bar{\alpha}_t) \mathbf{I})
 \end{equation}
 
-where $\bar{\alpha}_t = \prod_{s=1}^t \alpha_s$ is the cumulative product of $\alpha_s$ up to time $t$.
-
-\section*{Sampling $x_t$ from $x_0$}
+where $\bar{\alpha}_t = \prod_{s=1}^t \alpha_s$ (basically we run all the steps from $1$ to $t$, which has a Gaussian marginal distribution).
 
 Since the marginal distribution is known, we can sample $x_t$ directly from $x_0$ using:
 

@@ -3,3 +3,6 @@
 *.log
 *.out
 data/
+*.synctex.gz
+*.fls
+*.fdb_latexmk
