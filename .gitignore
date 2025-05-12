@@ -6,3 +6,7 @@ data/
 *.synctex.gz
 *.fls
 *.fdb_latexmk
+Lib/
+*.TAG
+pyvenv.cfg
+Scripts/
