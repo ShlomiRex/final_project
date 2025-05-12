@@ -19,11 +19,11 @@ poetry env use 3.11.8
 poetry install
 poetry env activate
 
-# Add CUDA support
+# Add CUDA support after activating the environment (read next section)
 poe install_cuda
 ```
 
-Make sure that the last command `poetry env activate` run again in your terminal to make sure the active environment is running (example):
+Make sure that the command `poetry env activate` run again in your terminal to make sure the active environment is running (example):
 
 `source /Users/user/Library/Caches/pypoetry/virtualenvs/text-conditioned-image-generation-using-st-l7k_OWS4-py3.11/bin/activate` 
 

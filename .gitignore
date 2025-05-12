@@ -10,3 +10,5 @@ Lib/
 *.TAG
 pyvenv.cfg
 Scripts/
+*.pyc
+!src/scripts/
