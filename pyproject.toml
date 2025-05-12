@@ -5,7 +5,13 @@ description = "My final MSC project."
 authors = [{ name = "Shlomi Domnenco", email = "shlomidom@gmail.com" }]
 readme = "README.md"
 requires-python = "3.11.8"
-dependencies = []
+dependencies = [
+    "numpy (>=2.2.5,<3.0.0)",
+    "matplotlib (>=3.10.3,<4.0.0)",
+    "torch (>=2.7.0,<3.0.0)",
+    "torchvision (>=0.22.0,<0.23.0)",
+    "torchaudio (>=2.7.0,<3.0.0)",
+]
 
 
 [build-system]
@@ -14,3 +20,14 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 package-mode = false
+
+[[tool.poetry.source]]
+name = "pytorch-gpu"
+url = "https://download.pytorch.org/whl/cu118"
+priority = "explicit"
+
+
+[tool.poetry.dependencies]
+torch = {source = "pytorch-gpu"}
+torchvision = {source = "pytorch-gpu"}
+torchaudio = {source = "pytorch-gpu"}
