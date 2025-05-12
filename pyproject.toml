@@ -9,8 +9,9 @@ dependencies = [
     "numpy (>=2.2.5,<3.0.0)",
     "matplotlib (>=3.10.3,<4.0.0)",
     "torch (>=2.7.0,<3.0.0)",
-    "torchvision (>=0.22.0,<0.23.0)",
+    "torchvision (>=0.22.0,<1.0.0)",
     "torchaudio (>=2.7.0,<3.0.0)",
+    "poethepoet (>=0.34.0,<0.35.0)",
 ]
 
 
@@ -21,13 +22,5 @@ build-backend = "poetry.core.masonry.api"
 [tool.poetry]
 package-mode = false
 
-[[tool.poetry.source]]
-name = "pytorch-gpu"
-url = "https://download.pytorch.org/whl/cu118"
-priority = "explicit"
-
-
-[tool.poetry.dependencies]
-torch = {source = "pytorch-gpu"}
-torchvision = {source = "pytorch-gpu"}
-torchaudio = {source = "pytorch-gpu"}
+[tool.poe.tasks]
+install_cuda = { cmd = "pip install torch==2.7.0+cu118 torchvision==0.22.0+cu118 torchaudio==2.7.0+cu118 --index-url https://download.pytorch.org/whl/cu118" }
