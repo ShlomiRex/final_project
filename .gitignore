@@ -12,3 +12,4 @@ pyvenv.cfg
 Scripts/
 *.pyc
 !src/scripts/
+src/experiments/unet/unet_model.pth
