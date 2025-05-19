@@ -397,6 +397,18 @@ files = [
 ]
 
 [[package]]
+name = "einops"
+version = "0.8.1"
+description = "A new flavour of deep learning operations"
+optional = false
+python-versions = ">=3.8"
+groups = ["main"]
+files = [
+    {file = "einops-0.8.1-py3-none-any.whl", hash = "sha256:919387eb55330f5757c6bea9165c5ff5cfe63a642682ea788a6d472576d81737"},
+    {file = "einops-0.8.1.tar.gz", hash = "sha256:de5d960a7a761225532e0f1959e5315ebeafc0cd43394732f103ca44b9837e84"},
+]
+
+[[package]]
 name = "executing"
 version = "2.2.0"
 description = "Get the currently executing AST node of a frame, and other information"
@@ -2209,4 +2221,4 @@ files = [
 [metadata]
 lock-version = "2.1"
 python-versions = "3.11.8"
-content-hash = "2293ebc864b09d3c639e2e42311c99584941ef8d3478b1284e0c1bc85ea639d4"
+content-hash = "141378719f308c0edeea28f3bb2b103c1189ccfcfc3ddcd19a4e6111eaedd89f"
