@@ -3,7 +3,9 @@ import torch.nn as nn
 import logging
 from tqdm import tqdm
 
-from linear_noise_scheduler import LinearNoiseScheduler
+from modules.noise_schedulers.linear_noise_scheduler import LinearNoiseScheduler
+
+# TODO: Needs testing
 
 class Sampler:
     def __init__(self, img_size, device, t, noise_scheduler, unet):
@@ -32,7 +34,7 @@ class Sampler:
                     z = torch.zeros_like(x)
                 
                 term_100 = ((1 - alpha_t) / (torch.sqrt(1 - alpha_hat)))
-                term_2 = (x - term_100 * predicted_noise)
+                term_2 = (x - term_100 * pred_noise)
                 term_1 = 1 / torch.sqrt(alpha_t)
                 term_3 = torch.sqrt(linear_noise_scheduler.betas[t]) * z
                 x_t_minus_1 = term_1 * term_2 + term_3

@@ -5,7 +5,21 @@ Title: Text-Conditioned Image Generation with Stable Diffusion
 Table of Contents:
 
 - [Final Project](#final-project)
+  - [Projects and resources that helped me along the way](#projects-and-resources-that-helped-me-along-the-way)
   - [Virtual Environment Setup (pytorch CPU)](#virtual-environment-setup-pytorch-cpu)
+
+## Projects and resources that helped me along the way
+
+- **U-Net**: I created simple U-Net (from the paper) to segment images of cats and dogs on the Oxford IIIT Pets dataset. Github: https://github.com/ShlomiRex/image-segmentation
+- **Variational Autoencoder**: Trained simple VAE on MNIST digit dataset to classify images of handwritten digits, as well as to denoise such images.
+  - BlendDigits: online demo that uses VAE to blend two digits together. It demonstrates the continuous latent space of the VAE.
+    - Demo: https://blenddigits.shlomidom.com
+    - Github: https://github.com/ShlomiRex/BlendDigits
+  - Interactive digit denoiser where the user changes mean, variance of the noise and the model denoises the image.
+    - Github: https://github.com/ShlomiRex/interactive_denoiser
+  - Interactive digit classifier where the user draws a digit and the model classifies it.
+    - Github: https://github.com/ShlomiRex/interactive_digit_classifier
+- **Noise schedulers**: linear and cosine noise schedulers appear in this project under `src/experiments/noise_schedulers`.
 
 ## Virtual Environment Setup (pytorch CPU)
 
