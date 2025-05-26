@@ -8,9 +8,6 @@ requires-python = "3.11.8"
 dependencies = [
     "numpy (>=2.2.5,<3.0.0)",
     "matplotlib (>=3.10.3,<4.0.0)",
-    "torch (>=2.7.0,<3.0.0)",
-    "torchvision (>=0.22.0,<1.0.0)",
-    "torchaudio (>=2.7.0,<3.0.0)",
     "poethepoet (>=0.34.0,<0.35.0)",
     "torchinfo (>=1.8.0,<2.0.0)",
     "torchsummary (>=1.5.1,<2.0.0)",
@@ -18,6 +15,9 @@ dependencies = [
     "einops (>=0.8.1,<0.9.0)",
     "transformers (>=4.52.3,<5.0.0)",
     "scipy (>=1.15.3,<2.0.0)",
+    "torch (>=2.7.0,<3.0.0)",
+    "torchvision (>=0.22.0,<0.23.0)",
+    "torchaudio (>=2.7.0,<3.0.0)",
 ]
 
 
@@ -31,5 +31,16 @@ package-mode = false
 [tool.poetry.group.dev.dependencies]
 ipykernel = "^6.29.5"
 
+
+[[tool.poetry.source]]
+name = "pytorch-gpu"
+url = "https://download.pytorch.org/whl/cu118"
+priority = "explicit"
+
+
+[tool.poetry.dependencies]
+torch = {source = "pytorch-gpu"}
+torchvision = {source = "pytorch-gpu"}
+torchaudio = {source = "pytorch-gpu"}
 [tool.poe.tasks]
 install_cuda = { cmd = "pip install torch==2.7.0+cu118 torchvision==0.22.0+cu118 torchaudio==2.7.0+cu118 --index-url https://download.pytorch.org/whl/cu118" }
