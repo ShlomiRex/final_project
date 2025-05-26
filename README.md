@@ -7,6 +7,8 @@ Table of Contents:
 - [Final Project](#final-project)
   - [Projects and resources that helped me along the way](#projects-and-resources-that-helped-me-along-the-way)
   - [Virtual Environment Setup (pytorch CPU)](#virtual-environment-setup-pytorch-cpu)
+  - [Resources \& Tutorials used](#resources--tutorials-used)
+  - [Paper used](#paper-used)
 
 ## Projects and resources that helped me along the way
 
@@ -44,3 +46,16 @@ Make sure that the command `poetry env activate` run again in your terminal to m
 (or on Windows (for example): `C:\Users\Shlomi\AppData\Local\pypoetry\Cache\virtualenvs\text-conditioned-image-generation-using-st-35DVCAXA-py3.11\Scripts\activate.ps1`)
 
 We can be sure we created a new environment by running `pip list`, we should see only pip in the list. If not, we can remove the environment folder (given by `poetry env info`).
+
+
+## Resources & Tutorials used
+
+* Understanding Score Matching, Langevin Dynamics Sampling, Stochastic Differential Equations, the math behind diffusion and basically how diffusion started: https://www.youtube.com/watch?v=B4oHJpEJBAA
+
+
+## Paper used
+
+* DDPM paper: https://arxiv.org/abs/2006.11239
+* OpenAI paper about using cosine noise scheduler: https://arxiv.org/abs/2102.09672
+* OpenAI paper improving the architecture of the U-Net by adding normalization layers, residual connections, and attention layers: https://arxiv.org/abs/2105.05233
+* 
