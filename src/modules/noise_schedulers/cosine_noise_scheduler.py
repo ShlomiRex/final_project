@@ -1,4 +1,5 @@
 import torch
+from typing import Tuple
 
 # Cosine noise scheduler class
 class CosineNoiseScheduler:
@@ -20,7 +21,7 @@ class CosineNoiseScheduler:
         betas = 1 - (alphas_bar[1:] / alphas_bar[:-1])
         return torch.clamp(betas, max=0.999)
 
-    def add_noise(self, x0, t):
+    def add_noise(self, x0: torch.Tensor, t: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
         alpha_bar = self.alpha_cumprod[t].view(-1, 1, 1, 1)
         noise = torch.randn_like(x0)
         return torch.sqrt(alpha_bar) * x0 + torch.sqrt(1 - alpha_bar) * noise

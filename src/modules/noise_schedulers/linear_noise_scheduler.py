@@ -1,5 +1,5 @@
 import torch
-
+from typing import Tuple
 """
 beta_start and beta_end are hyperparameters
 """
@@ -15,9 +15,11 @@ class LinearNoiseScheduler:
         self.alphas = 1.0 - self.betas # Equation 1
         self.alpha_hat = torch.cumprod(self.alphas, dim=0)  # Equation 2
 
-    def add_noise(self, x0: torch.Tensor, t: torch.Tensor):
+    def add_noise(self, x0: torch.Tensor, t: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
         """
         Forward process: q(x_t | x_0)
+
+        Returns the noisy image at time t and the noise added to the image.
         """
         epsilon = torch.randn_like(x0) # Input: x_0 - it returns the same size/shape as the input tensor (i.e. image)
 
@@ -25,4 +27,5 @@ class LinearNoiseScheduler:
         alpha_bar_t = self.alpha_hat[t].view(-1, 1, 1, 1).to(x0.device)
         first_term = torch.sqrt(alpha_bar_t) * x0
         second_term = torch.sqrt(1 - alpha_bar_t) * epsilon
-        return first_term + second_term # Equation 3
+        noisy_image = first_term + second_term # Equation 3
+        return noisy_image, epsilon
