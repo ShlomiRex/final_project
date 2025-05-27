@@ -61,6 +61,10 @@ class UNet(nn.Module):
         self.uconv4 = UpSampling(128, 64)
 
         self.out = nn.Conv2d(64, num_classes, kernel_size=1)
+    
+    def to(self, device):
+        super().to(device)
+        return self
 
     def forward(self, x):
         d1,p1 = self.dconv1(x)

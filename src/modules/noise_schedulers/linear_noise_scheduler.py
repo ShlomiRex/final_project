@@ -1,10 +1,13 @@
 import torch
+from torch import nn
 from typing import Tuple
 """
 beta_start and beta_end are hyperparameters
 """
-class LinearNoiseScheduler:
+class LinearNoiseScheduler(nn.Module):
     def __init__(self, timesteps: int = 1000, beta_start: float = 1e-4, beta_end: float = 0.02):
+        super().__init__()
+
         self.timesteps = timesteps
 
         # Start and end are the beta values for the linear noise schedule that we linearly interpolate between (hence linear scheduler)
@@ -14,8 +17,14 @@ class LinearNoiseScheduler:
         self.betas = torch.linspace(beta_start, beta_end, timesteps)
         self.alphas = 1.0 - self.betas # Equation 1
         self.alpha_hat = torch.cumprod(self.alphas, dim=0)  # Equation 2
+    
+    def to(self, device):
+        self.betas = self.betas.to(device)
+        self.alphas = self.alphas.to(device)
+        self.alpha_hat = self.alpha_hat.to(device)
+        return self
 
-    def add_noise(self, x0: torch.Tensor, t: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
+    def forward(self, x0: torch.Tensor, t: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
         """
         Forward process: q(x_t | x_0)
 

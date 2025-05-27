@@ -26,3 +26,29 @@ def get_time_embeddings(timesteps: torch.Tensor, embedding_dim: int) -> torch.Te
     embedding = torch.cat([torch.sin(args), torch.cos(args)], dim=1)  # (N, embedding_dim)
 
     return embedding
+
+class SinusoidalEmbedding(torch.nn.Module):
+    def __init__(self, embedding_dim: int):
+        super().__init__()
+        self.embedding_dim = embedding_dim
+    
+    def to(self, device):
+        super().to(device)
+        return self
+
+    def forward(self, timesteps: torch.Tensor) -> torch.Tensor:
+        assert self.embedding_dim % 2 == 0, "embedding_dim must be even"
+
+        # Create the frequency spectrum
+        half_dim = self.embedding_dim // 2
+        exponent = -math.log(10000.0) / (half_dim - 1)
+        freq = torch.exp(torch.arange(half_dim, dtype=torch.float32) * exponent)
+
+        # Expand timesteps for broadcasting
+        timesteps = timesteps.float().unsqueeze(1)  # (N, 1)
+        args = timesteps * freq.unsqueeze(0)        # (N, half_dim)
+
+        # Concatenate sin and cos
+        embedding = torch.cat([torch.sin(args), torch.cos(args)], dim=1)  # (N, embedding_dim)
+
+        return embedding

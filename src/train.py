@@ -9,12 +9,15 @@ from model import Model
 model = Model()
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
+print(f"Using device: {device}")
+
 model.to(device)
+
 optimizer = Adam(model.parameters(), lr=0.001)
-epochs = 100 # Try more!
+epochs = 1 # Try more!
 
 IMG_SIZE = 32
-BATCH_SIZE = 64
+BATCH_SIZE = 1
 T = 300
 
 data_transform = transforms.Compose([
@@ -43,8 +46,13 @@ for epoch in tqdm(range(epochs), desc="Training", unit="epoch"):
     for step, batch in enumerate(train_dataloader):
       optimizer.zero_grad()
 
+      imgs, labels = batch
+      imgs = imgs.to(device)
+      labels = labels.to(device)
+
       t = torch.randint(0, T, (BATCH_SIZE,), device=device).long()
-      loss = model.get_loss(model, batch[0], t)
+      loss = model.get_loss(model, imgs, t)
+      print(f"Epoch {epoch} | step {step:03d} Loss: {loss.item()} ")
       loss.backward()
       optimizer.step()
 
