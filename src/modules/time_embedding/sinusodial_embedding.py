@@ -34,6 +34,7 @@ class SinusoidalEmbedding(torch.nn.Module):
     
     def to(self, device):
         super().to(device)
+        self.device = device
         return self
 
     def forward(self, timesteps: torch.Tensor) -> torch.Tensor:
@@ -43,6 +44,7 @@ class SinusoidalEmbedding(torch.nn.Module):
         half_dim = self.embedding_dim // 2
         exponent = -math.log(10000.0) / (half_dim - 1)
         freq = torch.exp(torch.arange(half_dim, dtype=torch.float32) * exponent)
+        freq = freq.to(self.device)
 
         # Expand timesteps for broadcasting
         timesteps = timesteps.float().unsqueeze(1)  # (N, 1)

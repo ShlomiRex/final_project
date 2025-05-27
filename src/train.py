@@ -17,7 +17,7 @@ optimizer = Adam(model.parameters(), lr=0.001)
 epochs = 1 # Try more!
 
 IMG_SIZE = 32
-BATCH_SIZE = 1
+BATCH_SIZE = 64
 T = 300
 
 data_transform = transforms.Compose([
@@ -27,11 +27,13 @@ data_transform = transforms.Compose([
     # transforms.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])
 ])
 
-train = torchvision.datasets.FashionMNIST(root="./data", download=True, 
-                                        transform=data_transform)
+data_transform = transforms.Compose([
+    transforms.ToTensor(),
+])
 
-test = torchvision.datasets.FashionMNIST(root="./data", download=True, 
-                                        transform=data_transform, train=False)
+train = torchvision.datasets.FashionMNIST(root="./data", download=True, transform=data_transform, train=True)
+
+test = torchvision.datasets.FashionMNIST(root="./data", download=True, transform=data_transform, train=False)
 
 
 train_dataloader = DataLoader(train, batch_size=BATCH_SIZE, shuffle=True, drop_last=True)
@@ -51,11 +53,14 @@ for epoch in tqdm(range(epochs), desc="Training", unit="epoch"):
       labels = labels.to(device)
 
       t = torch.randint(0, T, (BATCH_SIZE,), device=device).long()
+      imgs = torch.nn.functional.pad(imgs, (2, 2, 2, 2))  # Padding to make it compatible with the model input size
       loss = model.get_loss(model, imgs, t)
-      print(f"Epoch {epoch} | step {step:03d} Loss: {loss.item()} ")
       loss.backward()
       optimizer.step()
 
     #   if epoch % 5 == 0 and step == 0:
     #     print(f"Epoch {epoch} | step {step:03d} Loss: {loss.item()} ")
     #     sample_plot_image()
+
+# Save model
+torch.save(model.state_dict(), "model.pth")

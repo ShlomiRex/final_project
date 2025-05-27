@@ -16,3 +16,4 @@ src/experiments/unet/unet_model.pth
 *(busy)
 *.minted
 *.pth
+*/mlruns/*

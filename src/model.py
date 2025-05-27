@@ -45,6 +45,8 @@ class Model(nn.Module):
         x: Noisy images
         t: Timesteps tensor for the batch
         """
+        # TODO: Do something with time embeddings
+        time_embeddings = self.sinusoidalEmbedding(t)
         return self.unet(x)
 
 
