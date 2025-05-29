@@ -36,5 +36,10 @@ class LinearNoiseScheduler(nn.Module):
         alpha_bar_t = self.alpha_hat[t].view(-1, 1, 1, 1).to(x0.device)
         first_term = torch.sqrt(alpha_bar_t) * x0
         second_term = torch.sqrt(1 - alpha_bar_t) * epsilon
-        noisy_image = first_term + second_term # Equation 3
-        return noisy_image, epsilon
+        noisy_images = first_term + second_term # Equation 3
+
+        noisy_images = noisy_images.reshape(x0.shape)
+        first_term = first_term.reshape(x0.shape)
+        second_term = second_term.reshape(x0.shape)
+
+        return noisy_images, epsilon, first_term, second_term

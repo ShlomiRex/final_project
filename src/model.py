@@ -1,5 +1,4 @@
 import torch.nn as nn
-import torch.nn.functional as F
 import torch
 import matplotlib.pyplot as plt
 from modules.time_embedding.sinusodial_embedding import SinusoidalEmbedding
@@ -7,7 +6,7 @@ from modules.time_embedding.sinusodial_embedding import SinusoidalEmbedding
 from modules.unet.unet import UNet
 
 class Model(nn.Module):
-    def __init__(self, noise_scheduler: str = "linear", input_channels: int = 1):
+    def __init__(self, noise_scheduler: str = "linear", input_channels: int = 1, num_classes: int = 3):
         super().__init__()
 
         # Noise scheduler selection
@@ -21,7 +20,7 @@ class Model(nn.Module):
             raise ValueError(f"Unknown noise scheduler: {noise_scheduler}")
         
         # U-Net selection
-        self.unet = UNet(in_channels=input_channels, num_classes=1) # TODO: Num of classes should not be here
+        self.unet = UNet(in_channels=input_channels, num_classes=num_classes) # TODO: Num of classes should not be here
 
         # Time embeddings
         self.time_embedding_dim = 256
@@ -34,11 +33,6 @@ class Model(nn.Module):
         self.unet.to(device)
         self.sinusoidalEmbedding.to(device)
         return self
-
-    def get_loss(self, model, imgs: torch.Tensor, t: torch.Tensor):
-        x_noisy, noise = self.noise_scheduler(imgs, t)
-        noise_pred = model(x_noisy, t)
-        return F.l1_loss(noise, noise_pred)
 
     def forward(self, x: torch.Tensor, t: torch.Tensor):
         """
