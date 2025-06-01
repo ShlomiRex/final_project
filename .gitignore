@@ -17,3 +17,4 @@ src/experiments/unet/unet_model.pth
 *.minted
 *.pth
 */mlruns/*
+*/mlartifacts/*
