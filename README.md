@@ -47,15 +47,13 @@ Make sure that the command `poetry env activate` run again in your terminal to m
 
 We can be sure we created a new environment by running `pip list`, we should see only pip in the list. If not, we can remove the environment folder (given by `poetry env info`).
 
-
 ## Resources & Tutorials used
 
-* Understanding Score Matching, Langevin Dynamics Sampling, Stochastic Differential Equations, the math behind diffusion and basically how diffusion started: https://www.youtube.com/watch?v=B4oHJpEJBAA
-
+- Understanding Score Matching, Langevin Dynamics Sampling, Stochastic Differential Equations, the math behind diffusion and basically how diffusion started: https://www.youtube.com/watch?v=B4oHJpEJBAA
 
 ## Paper used
 
-* DDPM paper: https://arxiv.org/abs/2006.11239
-* OpenAI paper about using cosine noise scheduler: https://arxiv.org/abs/2102.09672
-* OpenAI paper improving the architecture of the U-Net by adding normalization layers, residual connections, and attention layers: https://arxiv.org/abs/2105.05233
-* 
+- DDPM paper: https://arxiv.org/abs/2006.11239
+- OpenAI paper about using cosine noise scheduler: https://arxiv.org/abs/2102.09672
+- OpenAI paper improving the architecture of the U-Net by adding normalization layers, residual connections, and attention layers: https://arxiv.org/abs/2105.05233
+- Cool website that shows math of diffusion models: https://lilianweng.github.io/posts/2021-07-11-diffusion-models/
