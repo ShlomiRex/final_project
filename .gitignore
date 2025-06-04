@@ -20,3 +20,5 @@ src/experiments/unet/unet_model.pth
 */mlartifacts/*
 /old/src/mlartifacts
 /old/src/mlruns
+/mlartifacts
+/mlruns
