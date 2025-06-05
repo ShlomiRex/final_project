@@ -22,3 +22,5 @@ src/experiments/unet/unet_model.pth
 /old/src/mlruns
 /mlartifacts
 /mlruns
+third-party/epoch
+third-party/model
