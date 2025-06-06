@@ -541,6 +541,41 @@ wrapt = ">=1.10,<2"
 dev = ["PyTest", "PyTest-Cov", "bump2version (<1)", "setuptools ; python_version >= \"3.12\"", "tox"]
 
 [[package]]
+name = "diffusers"
+version = "0.33.1"
+description = "State-of-the-art diffusion in PyTorch and JAX."
+optional = false
+python-versions = ">=3.8.0"
+groups = ["main"]
+files = [
+    {file = "diffusers-0.33.1-py3-none-any.whl", hash = "sha256:027469e74f289338eb24127409f8d60d840b1b7ce4b27ffcd3134fd3b8431567"},
+    {file = "diffusers-0.33.1.tar.gz", hash = "sha256:fc7f140295d2ec82b1e7474b77bb7057fc0686c14eadc54ca0e52a66527e18a2"},
+]
+
+[package.dependencies]
+filelock = "*"
+huggingface-hub = ">=0.27.0"
+importlib-metadata = "*"
+numpy = "*"
+Pillow = "*"
+regex = "!=2019.12.17"
+requests = "*"
+safetensors = ">=0.3.1"
+
+[package.extras]
+bitsandbytes = ["accelerate (>=0.31.0)", "bitsandbytes (>=0.43.3)"]
+dev = ["GitPython (<3.1.19)", "Jinja2", "accelerate (>=0.31.0)", "compel (==0.1.8)", "datasets", "flax (>=0.4.1)", "hf-doc-builder (>=0.3.0)", "invisible-watermark (>=0.2.0)", "isort (>=5.5.4)", "jax (>=0.4.1)", "jaxlib (>=0.4.1)", "k-diffusion (>=0.0.12)", "librosa", "parameterized", "peft (>=0.6.0)", "phonemizer", "protobuf (>=3.20.3,<4)", "pytest", "pytest-timeout", "pytest-xdist", "requests-mock (==1.10.0)", "ruff (==0.9.10)", "safetensors (>=0.3.1)", "scipy", "sentencepiece (>=0.1.91,!=0.1.92)", "tensorboard", "tiktoken (>=0.7.0)", "torch (>=1.4)", "torchvision", "transformers (>=4.41.2)", "urllib3 (<=2.0.0)"]
+docs = ["hf-doc-builder (>=0.3.0)"]
+flax = ["flax (>=0.4.1)", "jax (>=0.4.1)", "jaxlib (>=0.4.1)"]
+gguf = ["accelerate (>=0.31.0)", "gguf (>=0.10.0)"]
+optimum-quanto = ["accelerate (>=0.31.0)", "optimum-quanto (>=0.2.6)"]
+quality = ["hf-doc-builder (>=0.3.0)", "isort (>=5.5.4)", "ruff (==0.9.10)", "urllib3 (<=2.0.0)"]
+test = ["GitPython (<3.1.19)", "Jinja2", "compel (==0.1.8)", "datasets", "invisible-watermark (>=0.2.0)", "k-diffusion (>=0.0.12)", "librosa", "parameterized", "phonemizer", "pytest", "pytest-timeout", "pytest-xdist", "requests-mock (==1.10.0)", "safetensors (>=0.3.1)", "scipy", "sentencepiece (>=0.1.91,!=0.1.92)", "tiktoken (>=0.7.0)", "torchvision", "transformers (>=4.41.2)"]
+torch = ["accelerate (>=0.31.0)", "torch (>=1.4)"]
+torchao = ["accelerate (>=0.31.0)", "torchao (>=0.7.0)"]
+training = ["Jinja2", "accelerate (>=0.31.0)", "datasets", "peft (>=0.6.0)", "protobuf (>=3.20.3,<4)", "tensorboard"]
+
+[[package]]
 name = "docker"
 version = "7.1.0"
 description = "A Python library for the Docker Engine API."
@@ -4020,4 +4055,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.1"
 python-versions = "3.11.8"
-content-hash = "37e8fdafe2fc38ef7cb609a9e83ac71aeeda983489c0674e2a39bc15353c13dd"
+content-hash = "ee1e7122eadc0cbf7dbda5684ae419c3defabf1df1c1456ee4fbc42bacdb24fc"

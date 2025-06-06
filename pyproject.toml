@@ -22,6 +22,7 @@ dependencies = [
     "win10toast (>=0.9,<0.10)",
     "torchmetrics (>=1.7.2,<2.0.0)",
     "torch-fidelity (>=0.3.0,<0.4.0)",
+    "diffusers (>=0.33.1,<0.34.0)",
 ]
 
 
