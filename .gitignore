@@ -26,3 +26,4 @@ third-party/epoch
 third-party/model
 /new/mnist
 /third-party/mnist
+.DS_Store
