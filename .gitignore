@@ -27,3 +27,5 @@ third-party/model
 /new/mnist
 /third-party/mnist
 .DS_Store
+/new/cifar10
+new/trained_model.pt
