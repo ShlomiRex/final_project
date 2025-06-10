@@ -29,3 +29,8 @@ third-party/model
 .DS_Store
 /new/cifar10
 new/trained_model.pt
+/new/celeba
+*.zip
+*.pt
+new/sample.png
+/new/.ipynb_checkpoints

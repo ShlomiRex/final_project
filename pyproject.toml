@@ -23,6 +23,10 @@ dependencies = [
     "torchmetrics (>=1.7.2,<2.0.0)",
     "torch-fidelity (>=0.3.0,<0.4.0)",
     "diffusers (>=0.33.1,<0.34.0)",
+    "accelerate (>=1.7.0,<2.0.0)",
+    "datasets (>=3.6.0,<4.0.0)",
+    "pandas (>=2.3.0,<3.0.0)",
+    "requests (>=2.32.4,<3.0.0)",
 ]
 
 
