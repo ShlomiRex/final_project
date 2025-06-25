@@ -10,3 +10,5 @@ sample.png
 third-party/model
 third-party/epoch
 /notebooks/complete_new_model/datasets
+.DS_Store
+/data
