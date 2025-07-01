@@ -3555,6 +3555,18 @@ typing = ["typing-extensions ; python_version < \"3.10\""]
 xmp = ["defusedxml"]
 
 [[package]]
+name = "pipeline"
+version = "0.1"
+description = "Easy shell-like pipelines, with input from a file-like object"
+optional = false
+python-versions = ">=3.6"
+groups = ["main"]
+files = [
+    {file = "pipeline-0.1.0-py3-none-any.whl", hash = "sha256:d3a893837134eec4514f5a39e7d5ba027f8000700c6c8b738c10d7dda0966a02"},
+    {file = "pipeline-0.1.0.tar.gz", hash = "sha256:907ac19a74d689607b55d492bf576142c7b7993d4dee1bad0a027be3767dda71"},
+]
+
+[[package]]
 name = "platformdirs"
 version = "4.3.8"
 description = "A small Python package for determining appropriate platform-specific dirs, e.g. a `user data dir`."
@@ -5976,4 +5988,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.1"
 python-versions = "3.11.8"
-content-hash = "c1b42193da218d9b3710ee4337b506f62b7b3b8c4df06cbb69ec48bbeb46c2bf"
+content-hash = "7ae23ef37b8f38880b67a0a11ae46e8f1116f7a918efe963d85653a2f7759307"

@@ -1,3 +1,6 @@
 [submodule "third-party/pytorch-stable-diffusion"]
 	path = third-party/pytorch-stable-diffusion
 	url = https://github.com/hkproj/pytorch-stable-diffusion
+[submodule "third-party/stable-diffusion-from-scratch"]
+	path = third-party/stable-diffusion-from-scratch
+	url = https://github.com/juraam/stable-diffusion-from-scratch
