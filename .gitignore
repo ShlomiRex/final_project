@@ -13,3 +13,5 @@ third-party/epoch
 .DS_Store
 /data
 *.npy
+/datasets
+/notebooks/mnist

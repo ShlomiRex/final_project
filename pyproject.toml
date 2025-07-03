@@ -32,6 +32,7 @@ dependencies = [
     "fvcore (>=0.1.5.post20221221,<0.2.0)",
     "notebook (>=7.4.3,<8.0.0)",
     "pipeline (>=0.1.0,<0.2.0)",
+    "pytorch-lightning (>=2.5.2,<3.0.0)",
 ]
 
 
