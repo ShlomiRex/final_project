@@ -4,3 +4,6 @@
 [submodule "third-party/stable-diffusion-from-scratch"]
 	path = third-party/stable-diffusion-from-scratch
 	url = https://github.com/juraam/stable-diffusion-from-scratch
+[submodule "third-party/diffusers"]
+	path = third-party/diffusers
+	url = https://github.com/ShlomiRex/final_project
