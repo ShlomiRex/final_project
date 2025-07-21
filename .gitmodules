@@ -6,4 +6,4 @@
 	url = https://github.com/juraam/stable-diffusion-from-scratch
 [submodule "third-party/diffusers"]
 	path = third-party/diffusers
-	url = https://github.com/ShlomiRex/final_project
+	url = https://github.com/ShlomiRex/diffusers
