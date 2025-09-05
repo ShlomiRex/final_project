@@ -15,3 +15,7 @@ third-party/epoch
 *.npy
 /datasets
 /notebooks/mnist
+**/.venv/
+.venv/
+notebooks/complete_new_model/diffusers/sd_scratch_demo/
+
