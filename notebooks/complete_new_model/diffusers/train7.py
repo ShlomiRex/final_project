@@ -54,21 +54,30 @@ import numpy as np
 ROOT_DIR = Path("./train7_output")
 ROOT_DIR.mkdir(parents=True, exist_ok=True)
 CHECKPOINT_DIR = ROOT_DIR / "checkpoints"
-CHECKPOINT_DIR.mkdir(exist_ok=True)
+CHECKPOINT_DIR.mkdir(parents=True, exist_ok=True)
 EXAMPLES_DIR = ROOT_DIR / "examples"
-EXAMPLES_DIR.mkdir(exist_ok=True)
+EXAMPLES_DIR.mkdir(parents=True, exist_ok=True)
+PLOTS_DIR = ROOT_DIR / "plots"
+PLOTS_DIR.mkdir(parents=True, exist_ok=True)
+
+print(f"📁 Output directories created:")
+print(f"   ROOT_DIR: {ROOT_DIR.absolute()}")
+print(f"   CHECKPOINT_DIR: {CHECKPOINT_DIR.absolute()}")
+print(f"   EXAMPLES_DIR: {EXAMPLES_DIR.absolute()}")
+print(f"   PLOTS_DIR: {PLOTS_DIR.absolute()}")
 
 # ------------------ Configuration Variables ------------------
 SEED = 42
-IMAGE_SIZE = 32  # resize CIFAR10
-BATCH_SIZE = 256
-NUM_EPOCHS = 40
+IMAGE_SIZE = 32  # Keep at 32x32 as requested - results in 8x8 latents
+BATCH_SIZE = 16  # Reduced batch size for larger model
+NUM_EPOCHS = 100  # Increased from 10 - diffusion models need much more training
 LEARNING_RATE = 1e-4
-GRAD_ACCUM_STEPS = 1
-MAX_TRAIN_STEPS = 200_000  # small demo cap
-SAVE_CHECKPOINT_EVERY_EPOCHS = 5  # Save checkpoint every 5 epochs
-GENERATE_IMAGES_EVERY_EPOCHS = 1  # Generate images every 1 epoch
+GRAD_ACCUM_STEPS = 2  # Increased gradient accumulation to maintain effective batch size
+MAX_TRAIN_STEPS = 10_000_000  # Increased cap - let it train longer
+SAVE_CHECKPOINT_EVERY_EPOCHS = 10  # Save checkpoint every 10 epochs
+GENERATE_IMAGES_EVERY_EPOCHS = 1  # Generate images EVERY epoch to monitor progress
 NUM_TRAIN_TIMESTEPS = 1000
+CLASSIFIER_FREE_GUIDANCE_DROPOUT = 0.1  # Randomly drop text conditioning 10% of the time
 
 PRETRAINED_VAE = "stabilityai/sdxl-vae"  # we will try to load a VAE from HF; fallback handled
 PRETRAINED_CLIP = "openai/clip-vit-base-patch32"
@@ -173,7 +182,20 @@ set_seed(SEED)
 
 # ------------------ Simple Cross-Attention Block ------------------
 class CrossAttention(nn.Module):
-    """A minimal cross-attention block: queries from spatial features, keys/values from text embeddings."""
+    """
+    Cross-attention block: queries from spatial features, keys/values from text token embeddings.
+    
+    This allows each spatial position (H*W) to attend to all text tokens (T), enabling the model
+    to selectively focus on different parts of the text prompt for different spatial regions.
+    
+    Input:
+    - x: spatial features (B, C, H, W) 
+    - text_embeds: text token embeddings (B, T, D) - preserves token dimension!
+    - attention_mask: optional mask (B, T) to ignore padding tokens
+    
+    Output: 
+    - attended features (B, C, H, W) conditioned on relevant text tokens
+    """
 
     def __init__(self, spatial_channels: int, text_dim: int, num_heads: int = 4):
         super().__init__()
@@ -192,126 +214,269 @@ class CrossAttention(nn.Module):
 
     def forward(self, x: torch.Tensor, text_embeds: torch.Tensor, attention_mask: Optional[torch.Tensor] = None):
         # x: (B, C, H, W)
+        # text_embeds: (B, T, D) where T is number of text tokens
+        # attention_mask: (B, T) where 1 = attend, 0 = ignore
+        
         b, c, h, w = x.shape
         q = self.to_q(x)  # (B, C, H, W)
         q = q.reshape(b, self.num_heads, self.head_dim, h * w)  # (B, heads, head_dim, N)
         q = q.permute(0, 1, 3, 2)  # (B, heads, N, head_dim)
 
-        # text_embeds: (B, T, D) -> collapse T by mean pooling
+        # Handle text embeddings - ensure batch dimension consistency
         if text_embeds.dim() == 3:
-            k_v_src = text_embeds.mean(dim=1)  # (B, D)
+            # text_embeds: (B, T, D)
+            assert text_embeds.shape[0] == b, f"Batch size mismatch: x={b}, text_embeds={text_embeds.shape[0]}"
+            _, T, D = text_embeds.shape
+            
+            k = self.to_k(text_embeds)  # (B, T, spatial_channels)
+            v = self.to_v(text_embeds)  # (B, T, spatial_channels)
+            
+            # Reshape for multi-head attention: (B, T, spatial_channels) -> (B, heads, T, head_dim)
+            k = k.reshape(b, T, self.num_heads, self.head_dim).permute(0, 2, 1, 3)  # (B, heads, T, head_dim)
+            v = v.reshape(b, T, self.num_heads, self.head_dim).permute(0, 2, 1, 3)  # (B, heads, T, head_dim)
         else:
-            k_v_src = text_embeds
-        k = self.to_k(k_v_src).reshape(b, self.num_heads, self.head_dim).unsqueeze(2)  # (B, heads, 1, head_dim)
-        v = self.to_v(k_v_src).reshape(b, self.num_heads, self.head_dim).unsqueeze(2)  # (B, heads, 1, head_dim)
+            # Fallback for 2D text embeddings - treat as single token
+            assert text_embeds.shape[0] == b, f"Batch size mismatch: x={b}, text_embeds={text_embeds.shape[0]}"
+            T = 1
+            k = self.to_k(text_embeds).reshape(b, self.num_heads, self.head_dim).unsqueeze(2)  # (B, heads, 1, head_dim)
+            v = self.to_v(text_embeds).reshape(b, self.num_heads, self.head_dim).unsqueeze(2)  # (B, heads, 1, head_dim)
 
-        # attention: q @ k^T -> (B, heads, N, 1)
-        attn = torch.matmul(q, k.transpose(-2, -1)) * self.scale  # (B, heads, N, 1)
+        # Compute attention: q @ k^T -> (B, heads, N, T)
+        attn = torch.matmul(q, k.transpose(-2, -1)) * self.scale  # (B, heads, N, T)
+        
+        # Apply attention mask if provided
         if attention_mask is not None:
-            # attention_mask: (B, T) -> reduce to (B,1,1) after mean, applied as multiplier
-            mask_val = attention_mask.float().mean(dim=1).unsqueeze(1).unsqueeze(2)
-            attn = attn.masked_fill(mask_val == 0, float('-inf'))
-        attn = torch.softmax(attn, dim=-1)
+            # attention_mask: (B, T) - ensure it matches the token dimension
+            assert attention_mask.shape == (b, T), f"Mask shape {attention_mask.shape} doesn't match (B={b}, T={T})"
+            
+            # Reshape mask to (B, 1, 1, T) to broadcast over (B, heads, N, T)
+            mask = attention_mask.unsqueeze(1).unsqueeze(2)  # (B, 1, 1, T)
+            # Set attention to very negative for masked tokens
+            attn = attn.masked_fill(mask == 0, -1e9)
+        
+        # Softmax over the token dimension (T)
+        attn = torch.softmax(attn, dim=-1)  # (B, heads, N, T)
 
+        # Apply attention to values
         out = torch.matmul(attn, v)  # (B, heads, N, head_dim)
-        out = out.permute(0, 1, 3, 2).contiguous().reshape(b, c, h, w)
+        
+        # Reshape back to spatial format
+        out = out.permute(0, 1, 3, 2).contiguous().reshape(b, c, h, w)  # (B, C, H, W)
         out = self.out(out)
+        
         return out
 
 
 # ------------------ Small UNet built from scratch ------------------
 
 class ResidualBlock(nn.Module):
-    def __init__(self, in_ch, out_ch):
+    def __init__(self, in_ch, out_ch, time_embed_dim=None, dropout=0.1):
         super().__init__()
+        
+        # First convolution path
         self.conv1 = nn.Conv2d(in_ch, out_ch, kernel_size=3, padding=1)
-        self.conv2 = nn.Conv2d(out_ch, out_ch, kernel_size=3, padding=1)
         self.norm1 = nn.GroupNorm(8, out_ch)
+        
+        # Second convolution path
+        self.conv2 = nn.Conv2d(out_ch, out_ch, kernel_size=3, padding=1)
         self.norm2 = nn.GroupNorm(8, out_ch)
+        
+        # Dropout for regularization
+        self.dropout = nn.Dropout(dropout)
+        
+        # Timestep embedding projection - projects to 2x channels for scale and shift
+        if time_embed_dim is not None:
+            self.time_mlp = nn.Sequential(
+                nn.SiLU(),
+                nn.Linear(time_embed_dim, out_ch * 2)  # 2x for scale and shift (FiLM)
+            )
+        else:
+            self.time_mlp = None
+            
+        # Residual connection - project input channels to output channels if different
         if in_ch != out_ch:
             self.nin_shortcut = nn.Conv2d(in_ch, out_ch, kernel_size=1)
         else:
             self.nin_shortcut = nn.Identity()
 
-    def forward(self, x):
-        h = F.relu(self.norm1(self.conv1(x)))
-        h = self.norm2(self.conv2(h))
-        return F.relu(h + self.nin_shortcut(x))
+    def forward(self, x, time_embed=None):
+        residual = self.nin_shortcut(x)
+        
+        # First conv block
+        h = self.conv1(x)
+        h = self.norm1(h)
+        
+        # Apply timestep conditioning using FiLM (Feature-wise Linear Modulation)
+        if time_embed is not None and self.time_mlp is not None:
+            time_embed_proj = self.time_mlp(time_embed)  # (B, 2*C)
+            scale, shift = time_embed_proj.chunk(2, dim=1)  # (B, C), (B, C)
+            scale = scale[:, :, None, None]  # (B, C, 1, 1)
+            shift = shift[:, :, None, None]  # (B, C, 1, 1)
+            h = h * (1 + scale) + shift  # FiLM conditioning
+            
+        h = F.silu(h)  # Use SiLU activation instead of ReLU
+        h = self.dropout(h)
+        
+        # Second conv block
+        h = self.conv2(h)
+        h = self.norm2(h)
+        
+        # Residual connection
+        h = h + residual
+        h = F.silu(h)  # Final activation
+        
+        return h
 
 
 class SimpleUNet(nn.Module):
-    """A lightweight conditional UNet with cross-attention to text embeddings."""
+    """Enhanced conditional UNet with cross-attention to text embeddings and timestep embeddings."""
 
-    def __init__(self, in_channels=4, base_channels=64, channel_mults=(1, 2, 4), text_dim=512):
+    def __init__(self, in_channels=4, base_channels=128, channel_mults=(1, 2, 4), text_dim=512):
         super().__init__()
+        
+        # Input conv
         self.in_conv = nn.Conv2d(in_channels, base_channels, kernel_size=3, padding=1)
+        
+        # Time embedding
+        time_embed_dim = base_channels * 4
+        self.time_embed = nn.Sequential(
+            nn.Linear(base_channels, time_embed_dim),
+            nn.SiLU(),
+            nn.Linear(time_embed_dim, time_embed_dim),
+            nn.SiLU(),
+            nn.Linear(time_embed_dim, time_embed_dim)
+        )
 
-        # down blocks
-        downs = []
-        ch = base_channels
+        # Down blocks
         self.down_blocks = nn.ModuleList()
-        for mult in channel_mults:
+        ch = base_channels
+        self.down_channels = []  # Track channels for skip connections
+        
+        for i, mult in enumerate(channel_mults):
             out_ch = base_channels * mult
             self.down_blocks.append(nn.ModuleDict({
-                'res1': ResidualBlock(ch, out_ch),
-                'attn': CrossAttention(out_ch, text_dim, num_heads=4),
-                'res2': ResidualBlock(out_ch, out_ch),
-                'downsample': nn.Conv2d(out_ch, out_ch, kernel_size=4, stride=2, padding=1)
+                'res1': ResidualBlock(ch, out_ch, time_embed_dim),
+                'res2': ResidualBlock(out_ch, out_ch, time_embed_dim),
+                'attn': CrossAttention(out_ch, text_dim, num_heads=8),
+                'res3': ResidualBlock(out_ch, out_ch, time_embed_dim),
+                'downsample': self._make_downsample(out_ch) if i < len(channel_mults) - 1 else nn.Identity()
             }))
+            self.down_channels.append(out_ch)
             ch = out_ch
 
-        # bottleneck
+        # Middle block
         self.mid = nn.ModuleDict({
-            'res1': ResidualBlock(ch, ch),
-            'attn': CrossAttention(ch, text_dim, num_heads=4),
-            'res2': ResidualBlock(ch, ch)
+            'res1': ResidualBlock(ch, ch, time_embed_dim),
+            'attn1': CrossAttention(ch, text_dim, num_heads=8),
+            'res2': ResidualBlock(ch, ch, time_embed_dim),
+            'attn2': CrossAttention(ch, text_dim, num_heads=8),
+            'res3': ResidualBlock(ch, ch, time_embed_dim)
         })
 
-        # up blocks
+        # Up blocks
         self.up_blocks = nn.ModuleList()
-        for mult in reversed(channel_mults):
+        for i, mult in enumerate(reversed(channel_mults)):
             out_ch = base_channels * mult
+            skip_ch = self.down_channels[-(i+1)]  # Get corresponding skip channel
+            
             self.up_blocks.append(nn.ModuleDict({
-                'upsample': nn.ConvTranspose2d(ch, out_ch, kernel_size=4, stride=2, padding=1),
-                'res1': ResidualBlock(out_ch * 2, out_ch),  # *2 because of skip connection concatenation
-                'attn': CrossAttention(out_ch, text_dim, num_heads=4),
-                'res2': ResidualBlock(out_ch, out_ch),
+                'upsample': self._make_upsample(ch, out_ch) if i > 0 else nn.Identity(),
+                'res1': ResidualBlock((ch if i == 0 else out_ch) + skip_ch, out_ch, time_embed_dim),  # Concatenated input
+                'res2': ResidualBlock(out_ch, out_ch, time_embed_dim),
+                'attn': CrossAttention(out_ch, text_dim, num_heads=8),
+                'res3': ResidualBlock(out_ch, out_ch, time_embed_dim),
             }))
             ch = out_ch
 
+        # Output
         self.out_conv = nn.Sequential(
             nn.GroupNorm(8, ch),
-            nn.ReLU(),
+            nn.SiLU(),
+            nn.Dropout(0.1),
             nn.Conv2d(ch, in_channels, kernel_size=3, padding=1)
         )
+    
+    def _make_downsample(self, channels):
+        """Create safe downsampling layer that works with small dimensions"""
+        return nn.Sequential(
+            nn.AvgPool2d(kernel_size=2, stride=2),
+            nn.Conv2d(channels, channels, kernel_size=1)  # 1x1 conv to maintain channels
+        )
+    
+    def _make_upsample(self, in_ch, out_ch):
+        """Create safe upsampling layer"""
+        return nn.Sequential(
+            nn.Upsample(scale_factor=2, mode='nearest'),
+            nn.Conv2d(in_ch, out_ch, kernel_size=3, padding=1)
+        )
+
+    def get_timestep_embedding(self, timesteps, embedding_dim):
+        """
+        From Fairseq. Build sinusoidal embeddings.
+        This matches the implementation in tensor2tensor, but differs slightly
+        from the description in Section 3.5 of "Attention Is All You Need".
+        """
+        half_dim = embedding_dim // 2
+        emb = math.log(10000) / (half_dim - 1)
+        emb = torch.exp(torch.arange(half_dim, dtype=torch.float32) * -emb)
+        emb = emb.to(device=timesteps.device)
+        emb = timesteps.float()[:, None] * emb[None, :]
+        emb = torch.cat([torch.sin(emb), torch.cos(emb)], dim=1)
+        if embedding_dim % 2 == 1:  # zero pad
+            emb = torch.nn.functional.pad(emb, (0, 1, 0, 0))
+        return emb
 
     def forward(self, x, timesteps, text_embeds):
         # x: (B, C, H, W)
-        # store skips
+        # timesteps: (B,)
+        # text_embeds: (B, seq_len, text_dim)
+        
+        # Get timestep embeddings
+        time_embed = self.get_timestep_embedding(timesteps, self.time_embed[0].in_features)  # Use first layer input size
+        time_embed = self.time_embed(time_embed)  # Project to time_embed_dim
+        
+        # Initial convolution
         h = self.in_conv(x)
         skips = []
-        for block in self.down_blocks:
-            h = block['res1'](h)
+        
+        # Down path
+        for i, block in enumerate(self.down_blocks):
+            # Apply residual blocks
+            h = block['res1'](h, time_embed)
+            h = block['res2'](h, time_embed)
+            
+            # Apply cross-attention
             h = block['attn'](h, text_embeds)
-            h = block['res2'](h)
+            h = block['res3'](h, time_embed)
             skips.append(h)
+            
+            # Downsample (except for the last block)
             h = block['downsample'](h)
 
-        # mid
-        h = self.mid['res1'](h)
-        h = self.mid['attn'](h, text_embeds)
-        h = self.mid['res2'](h)
+        # Middle blocks with dual attention
+        h = self.mid['res1'](h, time_embed)
+        h = self.mid['attn1'](h, text_embeds)
+        h = self.mid['res2'](h, time_embed)
+        h = self.mid['attn2'](h, text_embeds)
+        h = self.mid['res3'](h, time_embed)
 
-        # up
-        for block in self.up_blocks:
+        # Up path
+        for i, block in enumerate(self.up_blocks):
+            # Upsample
             h = block['upsample'](h)
-            skip = skips.pop()
-            # concatenate along channels
-            h = torch.cat([h, skip], dim=1)
-            h = block['res1'](h)
+            
+            # Concatenate skip connection
+            if skips:
+                skip = skips.pop()
+                h = torch.cat([h, skip], dim=1)
+            
+            # Apply residual blocks
+            h = block['res1'](h, time_embed)
             h = block['attn'](h, text_embeds)
-            h = block['res2'](h)
+            h = block['res2'](h, time_embed)
+            h = block['res3'](h, time_embed)
 
+        # Final output
         out = self.out_conv(h)
         return out
 
@@ -353,7 +518,8 @@ class CIFAR10WithCaptions:
 
 def get_dataloader(batch_size: int, image_size: int):
     dataset = CIFAR10WithCaptions(root=str(ROOT_DIR / "data"), image_size=image_size, download=True)
-    dl = DataLoader(dataset, batch_size=batch_size, shuffle=True, num_workers=4, pin_memory=True)
+    # Reduce num_workers for smaller batch size to avoid overhead
+    dl = DataLoader(dataset, batch_size=batch_size, shuffle=True, num_workers=2, pin_memory=True)
     return dl
 
 
@@ -375,11 +541,120 @@ def save_checkpoint(unet, optimizer, global_step, epoch):
     }, checkpoint_path)
     print(f"💾 Saved checkpoint at epoch {epoch}, step {global_step} to {checkpoint_path}")
 
+
+def plot_loss_curve(losses, epoch, global_step, save_path=None):
+    """
+    Plot the training loss curve and save it to disk.
+    
+    Args:
+        losses: List of all loss values recorded during training
+        epoch: Current epoch number
+        global_step: Current global step number
+        save_path: Optional custom save path. If None, uses PLOTS_DIR
+    """
+    if len(losses) == 0:
+        print("⚠️  No losses to plot")
+        return
+    
+    print(f"\n{'='*80}")
+    print(f"📊 PLOTTING LOSS CURVE")
+    print(f"   Epoch: {epoch}")
+    print(f"   Global Step: {global_step}")
+    print(f"   Total Loss Values: {len(losses)}")
+    print(f"{'='*80}\n")
+    
+    # Create figure with two subplots
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 6))
+    
+    # Plot 1: Full loss curve
+    ax1.plot(losses, alpha=0.6, linewidth=0.5, color='blue', label='Raw Loss')
+    
+    # Add moving average (window of 100 steps)
+    if len(losses) >= 100:
+        moving_avg_window = 100
+        moving_avg = np.convolve(losses, np.ones(moving_avg_window)/moving_avg_window, mode='valid')
+        ax1.plot(range(moving_avg_window-1, len(losses)), moving_avg, 
+                color='red', linewidth=2, label=f'Moving Avg (window={moving_avg_window})')
+    
+    ax1.set_xlabel('Training Step', fontsize=12)
+    ax1.set_ylabel('Loss (MSE)', fontsize=12)
+    ax1.set_title(f'Training Loss Curve - Epoch {epoch}, Step {global_step}', fontsize=14, fontweight='bold')
+    ax1.grid(True, alpha=0.3)
+    ax1.legend(loc='upper right')
+    
+    # Add statistics text box
+    stats_text = f'Current Loss: {losses[-1]:.6f}\n'
+    stats_text += f'Min Loss: {min(losses):.6f}\n'
+    stats_text += f'Max Loss: {max(losses):.6f}\n'
+    stats_text += f'Mean Loss: {np.mean(losses):.6f}\n'
+    stats_text += f'Std Loss: {np.std(losses):.6f}'
+    ax1.text(0.02, 0.98, stats_text, transform=ax1.transAxes, 
+            fontsize=10, verticalalignment='top',
+            bbox=dict(boxstyle='round', facecolor='wheat', alpha=0.5))
+    
+    # Plot 2: Recent loss (last 1000 steps or all if less)
+    recent_window = min(1000, len(losses))
+    recent_losses = losses[-recent_window:]
+    
+    ax2.plot(range(len(losses) - recent_window, len(losses)), recent_losses, 
+            alpha=0.7, linewidth=1, color='green', label='Recent Loss')
+    
+    # Add moving average for recent losses
+    if len(recent_losses) >= 50:
+        recent_moving_avg_window = 50
+        recent_moving_avg = np.convolve(recent_losses, 
+                                       np.ones(recent_moving_avg_window)/recent_moving_avg_window, 
+                                       mode='valid')
+        ax2.plot(range(len(losses) - recent_window + recent_moving_avg_window - 1, len(losses)), 
+                recent_moving_avg, color='orange', linewidth=2, 
+                label=f'Moving Avg (window={recent_moving_avg_window})')
+    
+    ax2.set_xlabel('Training Step', fontsize=12)
+    ax2.set_ylabel('Loss (MSE)', fontsize=12)
+    ax2.set_title(f'Recent Training Loss (Last {recent_window} Steps)', fontsize=14, fontweight='bold')
+    ax2.grid(True, alpha=0.3)
+    ax2.legend(loc='upper right')
+    
+    # Add recent statistics text box
+    recent_stats_text = f'Recent Avg: {np.mean(recent_losses):.6f}\n'
+    recent_stats_text += f'Recent Min: {min(recent_losses):.6f}\n'
+    recent_stats_text += f'Recent Max: {max(recent_losses):.6f}'
+    ax2.text(0.02, 0.98, recent_stats_text, transform=ax2.transAxes, 
+            fontsize=10, verticalalignment='top',
+            bbox=dict(boxstyle='round', facecolor='lightblue', alpha=0.5))
+    
+    plt.tight_layout()
+    
+    # Save the plot
+    if save_path is None:
+        save_path = PLOTS_DIR / f"loss_curve_epoch_{epoch}_step_{global_step}.png"
+    else:
+        save_path = Path(save_path)
+    
+    plt.savefig(save_path, dpi=150, bbox_inches='tight')
+    plt.close()
+    
+    print(f"{'='*80}")
+    print(f"✅ LOSS CURVE SAVED")
+    print(f"   Path: {save_path}")
+    print(f"   File exists: {save_path.exists()}")
+    print(f"   Full path: {save_path.absolute()}")
+    print(f"{'='*80}\n")
+
+
 def generate_sample_images(unet, vae, tokenizer, text_encoder, noise_scheduler, global_step, epoch, device):
     """Generate sample images without saving checkpoint."""
     # Create images directory
     images_dir = EXAMPLES_DIR / f"epoch_{epoch}_step_{global_step}"
-    images_dir.mkdir(exist_ok=True)
+    images_dir.mkdir(parents=True, exist_ok=True)
+    
+    print(f"\n{'='*80}")
+    print(f"🎨 GENERATING SAMPLE IMAGES")
+    print(f"   Epoch: {epoch}")
+    print(f"   Global Step: {global_step}")
+    print(f"   Output Directory: {images_dir}")
+    print(f"   Directory exists: {images_dir.exists()}")
+    print(f"{'='*80}\n")
     
     # Generate sample images
     unet.eval()
@@ -414,12 +689,14 @@ def generate_sample_images(unet, vae, tokenizer, text_encoder, noise_scheduler, 
             pred_noise = unet(latents, t_batch, text_embeddings)
         latents = scheduler_copy.step(pred_noise, t, latents).prev_sample
     
-    # Decode to images
+    # Decode to images - use the same scaling factor as during training
+    vae_scaling_factor = getattr(vae.config, 'scaling_factor', 0.13025)
     with torch.no_grad():
         try:
-            images = vae.decode(latents / getattr(vae.config, 'scaling_factor', 1.0)).sample
-        except Exception:
-            images = vae.decode(latents)
+            images = vae.decode(latents / vae_scaling_factor).sample
+        except Exception as e:
+            print(f"Warning: VAE decode failed with scaling, trying without: {e}")
+            images = vae.decode(latents).sample
     
     # Convert to [0,1] range
     images = (images.clamp(-1, 1) + 1) / 2
@@ -455,8 +732,13 @@ def generate_sample_images(unet, vae, tokenizer, text_encoder, noise_scheduler, 
     plt.savefig(grid_path, dpi=150, bbox_inches='tight')
     plt.close()
     
-    print(f"🖼️  Generated {len(images)} sample images at epoch {epoch}, step {global_step}")
-    print(f"Images saved to {images_dir}")
+    print(f"\n{'='*80}")
+    print(f"✅ IMAGES SAVED SUCCESSFULLY")
+    print(f"   Total images: {len(images)}")
+    print(f"   Grid image: {grid_path}")
+    print(f"   Grid exists: {grid_path.exists()}")
+    print(f"   Full path: {grid_path.absolute()}")
+    print(f"{'='*80}\n")
     
     # Set model back to training mode
     unet.train()
@@ -488,8 +770,8 @@ def train():
     # VAE: try to load a pretrained VAE for latents
     try:
         vae = AutoencoderKL.from_pretrained(PRETRAINED_VAE)
-        vae_scaling = getattr(vae.config, "scaling_factor", 0.18215)
-        print("✅ Loaded pretrained VAE.")
+        vae_scaling = getattr(vae.config, "scaling_factor", 0.13025)  # SDXL VAE uses 0.13025
+        print(f"✅ Loaded pretrained VAE with scaling factor: {vae_scaling}")
     except Exception as e:
         print("❌ Could not load pretrained VAE, Error:", e)
         exit(1)
@@ -497,10 +779,26 @@ def train():
     # create scheduler
     noise_scheduler = DDPMScheduler(beta_start=0.0001, beta_end=0.02, beta_schedule="linear", num_train_timesteps=NUM_TRAIN_TIMESTEPS)
 
-    # create UNet from scratch
+    # create UNet from scratch - enhanced but with proper dimensions for CIFAR-10
     latent_channels = 4
-    unet = SimpleUNet(in_channels=latent_channels, base_channels=64, channel_mults=(1, 2), text_dim=text_encoder.config.hidden_size)
-    print(f"✅ Created UNet with {sum(p.numel() for p in unet.parameters()):,} parameters")
+    unet = SimpleUNet(
+        in_channels=latent_channels, 
+        base_channels=128,  # Increased from 64
+        channel_mults=(1, 2),  # Only 1 downsampling level for 32x32 images to avoid spatial collapse
+        text_dim=text_encoder.config.hidden_size
+    )
+    
+    total_params = sum(p.numel() for p in unet.parameters())
+    trainable_params = sum(p.numel() for p in unet.parameters() if p.requires_grad)
+    print(f"✅ Created enhanced UNet with {total_params:,} total parameters ({trainable_params:,} trainable)")
+    print(f"📈 Parameter breakdown:")
+    print(f"   - Base channels: {128}")
+    print(f"   - Channel progression: {[128 * mult for mult in (1, 2)]}")
+    print(f"   - 3 residual blocks per down/up level")
+    print(f"   - Attention heads: 8 (increased from 4)")
+    print(f"   - Dual attention in middle block")
+    print(f"   - Latent dimensions: {IMAGE_SIZE}x{IMAGE_SIZE} → {IMAGE_SIZE//4}x{IMAGE_SIZE//4} after VAE encoding")
+    print(f"   - After downsampling: {IMAGE_SIZE//4}x{IMAGE_SIZE//4} → {IMAGE_SIZE//8}x{IMAGE_SIZE//8} (only 1 level to preserve spatial info)")
 
     # optimizer
     optimizer = torch.optim.AdamW(unet.parameters(), lr=LEARNING_RATE)
@@ -562,7 +860,14 @@ def train():
             noisy_latents = noise_scheduler.add_noise(latents, noise, timesteps)
 
             # text conditioning: use captions from dataset
-            tokenized = tokenizer(captions, padding='max_length', truncation=True, max_length=tokenizer.model_max_length, return_tensors='pt')
+            # Classifier-free guidance: randomly drop text conditioning
+            if torch.rand(1).item() < CLASSIFIER_FREE_GUIDANCE_DROPOUT:
+                # Use unconditional (empty) text embeddings
+                unconditional_captions = [""] * len(captions)
+                tokenized = tokenizer(unconditional_captions, padding='max_length', truncation=True, max_length=tokenizer.model_max_length, return_tensors='pt')
+            else:
+                tokenized = tokenizer(captions, padding='max_length', truncation=True, max_length=tokenizer.model_max_length, return_tensors='pt')
+            
             input_ids = tokenized['input_ids'].to(accelerator.device)
             attention_mask = tokenized['attention_mask'].to(accelerator.device)
             with torch.no_grad():
@@ -599,10 +904,10 @@ def train():
                 break
                 
         # End of epoch - check if we need to save checkpoint or generate images
+        # Wait for all processes to sync before saving
+        accelerator.wait_for_everyone()
+        
         if accelerator.is_main_process:
-            # Wait for all processes to sync before saving
-            accelerator.wait_for_everyone()
-            
             # Unwrap models for saving/inference
             unwrapped_unet = accelerator.unwrap_model(unet)
             unwrapped_vae = accelerator.unwrap_model(vae)
@@ -613,6 +918,16 @@ def train():
             
             # Check if we should generate images (every N epochs)
             should_generate_images = (epoch + 1) % GENERATE_IMAGES_EVERY_EPOCHS == 0
+            
+            if accelerator.is_local_main_process:
+                print(f"\n{'='*80}")
+                print(f"📋 End of Epoch {epoch+1}:")
+                print(f"   - Should save checkpoint: {should_save_checkpoint} (every {SAVE_CHECKPOINT_EVERY_EPOCHS} epochs)")
+                print(f"   - Should generate images: {should_generate_images} (every {GENERATE_IMAGES_EVERY_EPOCHS} epochs)")
+                print(f"{'='*80}\n")
+                
+                # Plot loss curve after every epoch
+                plot_loss_curve(losses, epoch + 1, global_step)
             
             if should_save_checkpoint and should_generate_images:
                 # Both checkpoint and images
@@ -641,7 +956,13 @@ def train():
         # Print epoch summary (only on main process)
         if accelerator.is_local_main_process:
             epoch_avg_loss = sum(epoch_losses) / len(epoch_losses) if epoch_losses else 0
-            tqdm.write(f"Epoch {epoch+1} completed - Average loss: {epoch_avg_loss:.6f}")
+            epoch_min_loss = min(epoch_losses) if epoch_losses else 0
+            epoch_max_loss = max(epoch_losses) if epoch_losses else 0
+            tqdm.write(f"📊 Epoch {epoch+1} completed - Avg loss: {epoch_avg_loss:.6f} | Min: {epoch_min_loss:.6f} | Max: {epoch_max_loss:.6f}")
+            
+            # Warning if loss is not decreasing or showing signs of collapse
+            if epoch > 10 and epoch_avg_loss > 0.5:
+                tqdm.write(f"⚠️  Warning: Loss is still high ({epoch_avg_loss:.6f}) after {epoch+1} epochs. Check generated images for quality.")
         
         if global_step >= MAX_TRAIN_STEPS:
             break
@@ -653,15 +974,20 @@ def train():
         unwrapped_vae = accelerator.unwrap_model(vae)
         unwrapped_text_encoder = accelerator.unwrap_model(text_encoder)
         
+        # Final loss plot
+        if accelerator.is_local_main_process:
+            plot_loss_curve(losses, epoch + 1, global_step, 
+                          save_path=PLOTS_DIR / "final_loss_curve.png")
+        
         save_checkpoint_and_generate_images(
             unwrapped_unet, unwrapped_vae, tokenizer, 
             unwrapped_text_encoder, noise_scheduler, 
             optimizer, global_step, epoch, device
         )
-        print("✅ Training finished. Final checkpoint and images saved.")
+        print("✅ Training finished. Final checkpoint, images, and loss plot saved.")
 
 
-def infer(unet: nn.Module, vae: nn.Module, tokenizer: CLIPTokenizer, text_encoder: CLIPTextModel, scheduler: DDPMScheduler):
+def infer(unet: nn.Module, vae: nn.Module, tokenizer: CLIPTokenizer, text_encoder: CLIPTextModel, scheduler: DDPMScheduler, device: torch.device):
     unet.eval()
     
     # Use all CIFAR-10 class captions for inference

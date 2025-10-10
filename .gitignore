@@ -18,4 +18,7 @@ third-party/epoch
 **/.venv/
 .venv/
 notebooks/complete_new_model/diffusers/sd_scratch_demo/
-
+train7_output/
+train7_output_backup/
+*.pyc
+__pycache__/
