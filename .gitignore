@@ -23,3 +23,6 @@ train7_output_backup/
 *.pyc
 __pycache__/
 *.pt
+slurm/logs/
+dataset_cache/
+notebooks/complete_new_model/diffusers/outputs
