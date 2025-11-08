@@ -22,3 +22,4 @@ train7_output/
 train7_output_backup/
 *.pyc
 __pycache__/
+*.pt
