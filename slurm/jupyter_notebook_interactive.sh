@@ -2,9 +2,9 @@
 #SBATCH --job-name=jupyter_interactive
 #SBATCH --qos=gpu           # High priority QoS for GPU jobs
 #SBATCH --gres=gpu:1        # Request 1 GPU (change as needed)
-#SBATCH --cpus-per-task=1   # Request 1 CPU core
-#SBATCH --mem=8G           # Request 8GB of memory
-#SBATCH --time=24:00:00     # Max time: 24 hours
+#SBATCH --cpus-per-task=2   # Request 2 CPU cores
+#SBATCH --mem=16G           # Request 16GB of memory
+#SBATCH --time=72:00:00     # Max time: 72 hours
 #SBATCH --output=slurm/logs/jupyter_interactive_%j.out
 #SBATCH --error=slurm/logs/jupyter_interactive_%j.err
 
