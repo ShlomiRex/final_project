@@ -1,0 +1,19 @@
+name: shlomid-conda-nov-2025
+channels:
+  - pytorch
+  - nvidia
+  - defaults
+dependencies:
+  - python=3.10
+  - pytorch
+  - torchvision
+  - torchaudio
+  - pytorch-cuda=11.8  # Specific CUDA toolkit
+  - numpy
+  - matplotlib
+  - pillow
+  - tqdm
+  - pip
+  - pip:
+      - mlflow
+      - opencv-python

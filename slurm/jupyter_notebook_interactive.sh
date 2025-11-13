@@ -1,10 +1,10 @@
 #!/bin/bash
 #SBATCH --job-name=jupyter_interactive
 #SBATCH --qos=gpu           # High priority QoS for GPU jobs
-#SBATCH --gres=gpu:1        # Request 1 GPU (change as needed)
+#SBATCH --gres=gpu:2        # Request 2 GPUs (change as needed)
 #SBATCH --cpus-per-task=2   # Request 2 CPU cores
 #SBATCH --mem=16G           # Request 16GB of memory
-#SBATCH --time=72:00:00     # Max time: 72 hours
+#SBATCH --time=168:00:00     # Max time: 1 week
 #SBATCH --output=slurm/logs/jupyter_interactive_%j.out
 #SBATCH --error=slurm/logs/jupyter_interactive_%j.err
 
@@ -19,8 +19,10 @@
 # JUPYTER_PORT can be passed as environment variable from sbatch --export
 JUPYTER_PORT=${JUPYTER_PORT:-9998}  # Default port if not specified, will auto-increment if busy
 ENVIRONMENT_TYPE="conda"  # Options: "virtualenv" or "conda"
-VIRTUALENV_PATH="/home/doshlom4/work/conda/envs/torch114"  # If using virtualenv
-CONDA_ENV_NAME="torch114"  # torch114 has Python and Jupyter; mycondaenv is broken
+
+VIRTUALENV_PATH="/home/doshlom4/work/conda/envs/shlomid_conda_12_11_2025"
+CONDA_ENV_NAME="shlomid_conda_12_11_2025" 
+
 
 # ==============================================================================
 # Environment Setup
