@@ -1,0 +1,16 @@
+
+# Ignore everything by default
+*
+
+# But allow directories so Git can recurse into subfolders
+!*/
+
+# Keep the repository .gitignore file itself
+!.gitignore
+
+# Allow TeX and PDF files anywhere in the tree
+!*.tex
+!*.pdf
+!**/*.tex
+!**/*.pdf
+
