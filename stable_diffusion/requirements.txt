@@ -1,0 +1,21 @@
+# Python 3.10 required
+# Create venv with: python3.10 -m venv venv
+# Activate with: source venv/bin/activate
+# Install with: pip install -r requirements.txt
+
+# PyTorch with CUDA 11.8 - CRITICAL: Use the correct CUDA version
+# Install PyTorch first with the specific CUDA toolkit
+--index-url https://download.pytorch.org/whl/cu118
+torch
+torchvision
+torchaudio
+
+# Core dependencies
+numpy
+matplotlib
+pillow
+tqdm
+opencv-python
+
+# MLflow for experiment tracking
+mlflow
