@@ -131,9 +131,45 @@ mlflow.log_params({
 ## HPC Cluster & Slurm
 
 ### Available Resources
-- **GPU Nodes**: 8×A100 80GB per node
+- **GPU Nodes**: gpu6 (2×A100), gpu8 (8×A100 80GB)
+- **Login Node**: `login9` (use for SSH tunneling)
 - **Max Runtime**: 72 hours per job
 - **Framework**: HuggingFace Accelerate for multi-GPU
+
+### Python Environment
+- **Location**: `/home/doshlom4/work/pytorch-env/venv-gpu8-pytorch/`
+- **Python**: 3.9.21
+- **PyTorch**: 2.6.0+cu124 (CUDA 12.4)
+- **Activation**: `source /home/doshlom4/work/pytorch-env/venv-gpu8-pytorch/bin/activate`
+
+### Accessing Servers from Local Machine
+
+**CRITICAL**: Use `login9` as the SSH gateway (NOT `hpc-login9`).
+
+When running servers on GPU nodes (Jupyter, MLflow, TensorBoard, etc.), use SSH port forwarding to access them from your local machine:
+
+```bash
+# Generic pattern for any server
+ssh -N -L localhost:<LOCAL_PORT>:<GPU_NODE>.hpc.pub.lan:<REMOTE_PORT> doshlom4@login9
+
+# Examples:
+# Jupyter Lab on gpu8:8888
+ssh -N -L localhost:8888:gpu8.hpc.pub.lan:8888 doshlom4@login9
+
+# MLflow on gpu8:5000
+ssh -N -L localhost:5000:gpu8.hpc.pub.lan:5000 doshlom4@login9
+
+# TensorBoard on gpu6:6006
+ssh -N -L localhost:6006:gpu6.hpc.pub.lan:6006 doshlom4@login9
+```
+
+Then access in browser: `http://localhost:<LOCAL_PORT>`
+
+**Notes:**
+- The `-N` flag prevents command execution (tunnel only)
+- Keep the SSH tunnel running while accessing the server
+- Press `Ctrl+C` to close the tunnel
+- You can map to different local ports if needed: `-L localhost:9999:gpu8.hpc.pub.lan:8888`
 
 ### Multi-GPU Training
 **CRITICAL**: Use Python scripts, NOT Jupyter notebooks for multi-GPU training.
@@ -154,6 +190,10 @@ squeue -u $USER | grep mlflow
 
 # Set tracking URI in training scripts
 export MLFLOW_TRACKING_URI=http://<mlflow_node>:5000
+
+# Access MLflow UI from local machine
+ssh -N -L localhost:5000:<mlflow_node>.hpc.pub.lan:5000 doshlom4@login9
+# Then open: http://localhost:5000
 ```
 
 ## Code Patterns

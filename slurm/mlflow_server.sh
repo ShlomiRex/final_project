@@ -3,7 +3,7 @@
 #SBATCH --output=slurm/logs/mlflow_server_%j.out
 #SBATCH --error=slurm/logs/mlflow_server_%j.err
 #SBATCH --time=168:00:00
-#SBATCH --partition=cpu
+#SBATCH --partition=work
 #SBATCH --cpus-per-task=4
 #SBATCH --mem=16G
 
@@ -36,8 +36,21 @@ echo "Job ID: $SLURM_JOB_ID"
 echo "=============================================="
 
 # Activate conda environment
-source ~/miniconda3/etc/profile.d/conda.sh || source ~/anaconda3/etc/profile.d/conda.sh
-conda activate latent-gpt 2>/dev/null || echo "Using system Python"
+# Try multiple conda paths
+if [ -f ~/miniconda3/etc/profile.d/conda.sh ]; then
+    source ~/miniconda3/etc/profile.d/conda.sh
+elif [ -f ~/anaconda3/etc/profile.d/conda.sh ]; then
+    source ~/anaconda3/etc/profile.d/conda.sh
+else
+    echo "Warning: Conda not found, using system Python"
+fi
+
+# Activate environment if conda is available
+if command -v conda &> /dev/null; then
+    conda activate latent-gpt 2>/dev/null || echo "Warning: Could not activate latent-gpt environment"
+else
+    echo "Warning: Conda not available, using system Python"
+fi
 
 # Create MLflow directories
 MLFLOW_DIR="${HOME}/work/final_project/mlruns"
