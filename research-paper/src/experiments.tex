@@ -1,0 +1,122 @@
+\section{Experimental Setup}
+
+\subsection{Hardware and Software Configuration}
+
+\begin{itemize}
+    \item \textbf{Hardware:} HPC cluster with GPU nodes (specifications vary by node type)
+    \item \textbf{CUDA:} Version 11.8
+    \item \textbf{Python:} 3.10
+    \item \textbf{Deep Learning Framework:} PyTorch 2.7.1+cu118
+    \item \textbf{Key Libraries:}
+    \begin{itemize}
+        \item HuggingFace Diffusers (diffusion models and schedulers)
+        \item HuggingFace Transformers (CLIP text encoder)
+        \item torchvision (dataset loading)
+        \item matplotlib (visualization)
+    \end{itemize}
+\end{itemize}
+
+\subsection{Dataset}
+
+\textbf{MNIST Handwritten Digits Dataset:}
+\begin{itemize}
+    \item \textbf{Size:} 60,000 training images, 10,000 test images
+    \item \textbf{Resolution:} 28×28 pixels, grayscale
+    \item \textbf{Classes:} 10 digit classes (0-9)
+    \item \textbf{Text captions:} Automatically generated as "A handwritten digit \{label\}"
+    \item \textbf{Preprocessing:} Conversion to tensors with values in range [0, 1]
+\end{itemize}
+
+\section{Experiment 1: Baseline Training}
+
+\subsection{Objective}
+Train a text-conditioned diffusion model to generate handwritten digits from text prompts, establishing baseline performance.
+
+\subsection{Training Configuration}
+\begin{itemize}
+    \item \textbf{Initial training:} 1 epoch for validation
+    \item \textbf{Extended training:} 5 epochs
+    \item \textbf{Batch size:} 512
+    \item \textbf{Learning rate:} $10^{-3}$
+    \item \textbf{Optimizer:} AdamW
+    \item \textbf{Number of trainable parameters:} Approximately 2.6M (UNet only)
+\end{itemize}
+
+\subsection{Monitoring}
+Training progress monitored by:
+\begin{itemize}
+    \item Loss tracking every 25 steps
+    \item Final epoch loss reporting
+    \item Visual inspection of generated samples
+\end{itemize}
+
+\section{Experiment 2: Classifier-Free Guidance Ablation}
+
+\subsection{Objective}
+Investigate the impact of guidance scale on generation quality and text-image alignment.
+
+\subsection{Guidance Scale Values}
+We systematically evaluate the following guidance scales:
+\begin{itemize}
+    \item $w = 0$ (unconditional generation, no text guidance)
+    \item $w = 5$ (weak guidance)
+    \item $w = 8$ (moderate guidance, baseline)
+    \item $w = 10$ (strong guidance)
+    \item $w = 20$ (very strong guidance)
+    \item $w = 50$ (extreme guidance)
+    \item $w = 100$ (maximum guidance)
+\end{itemize}
+
+\subsection{Evaluation Protocol}
+For each guidance scale:
+\begin{enumerate}
+    \item Generate images with fixed prompt: "A handwritten digit 0"
+    \item Use fixed random seed (422) for reproducibility
+    \item Apply 50 denoising steps
+    \item Qualitatively assess:
+    \begin{itemize}
+        \item Image clarity and sharpness
+        \item Adherence to text prompt
+        \item Presence of artifacts or distortions
+        \item Overall sample quality
+    \end{itemize}
+\end{enumerate}
+
+\subsection{Inference Parameters}
+\begin{itemize}
+    \item \textbf{Scheduler:} DDPM with squared cosine schedule
+    \item \textbf{Number of inference steps:} 50
+    \item \textbf{Random seed:} 422 (for reproducibility)
+    \item \textbf{Batch size:} 1 image per generation
+\end{itemize}
+
+\section{Experimental Procedure}
+
+\subsection{Training Workflow}
+\begin{enumerate}
+    \item Load pretrained CLIP text encoder and freeze weights
+    \item Initialize custom UNet with reduced parameters
+    \item Create MNIST dataset with automatic caption generation
+    \item Train for specified number of epochs with progress logging
+    \item Save model checkpoints (optional)
+\end{enumerate}
+
+\subsection{Generation Workflow}
+\begin{enumerate}
+    \item Set models to evaluation mode
+    \item Tokenize text prompt using CLIP tokenizer
+    \item Encode text and empty string for CFG
+    \item Initialize random noise tensor
+    \item Iteratively denoise using scheduler and UNet predictions
+    \item Post-process output (normalize to [0, 255] for visualization)
+\end{enumerate}
+
+\subsection{Visualization}
+Generated images displayed using matplotlib with:
+\begin{itemize}
+    \item Grayscale colormap
+    \item Grid layout for guidance scale comparison
+    \item Individual titles showing guidance scale values
+    \item Tight layout to prevent subplot overlap
+\end{itemize}
+

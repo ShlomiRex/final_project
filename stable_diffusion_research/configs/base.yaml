@@ -1,0 +1,186 @@
+# ============================================================================
+# BASE CONFIGURATION - Stable Diffusion Training
+# ============================================================================
+# This file contains default values. Override in specific configs.
+
+# -----------------------------------------------------------------------------
+# Model Configuration
+# -----------------------------------------------------------------------------
+model:
+  # U-Net Architecture (Tiny for MNIST testing)
+  unet:
+    in_channels: 4                    # VAE latent channels
+    out_channels: 4
+    model_channels: 128               # Reduced from 320 for faster training
+    channel_mult: [1, 2, 4]           # Only 3 levels instead of 4
+    num_res_blocks: 2                 # ResNet blocks per resolution
+    attention_resolutions: [4, 2]     # Apply attention at these downsampling factors
+    num_heads: 4                      # Reduced from 8
+    num_head_channels: 32             # Reduced from 64
+    use_spatial_transformer: true     # Use transformer blocks for cross-attention
+    transformer_depth: 1              # Transformer blocks per attention layer
+    context_dim: 768                  # CLIP embedding dimension
+    use_checkpoint: false             # Disable gradient checkpointing (causes issues with DDP)
+    dropout: 0.0
+
+  # VAE (Pretrained, Frozen)
+  vae:
+    pretrained: "stabilityai/sd-vae-ft-mse"
+    scale_factor: 0.18215             # Latent scaling factor
+
+  # Text Encoder (Pretrained, Frozen)
+  text_encoder:
+    pretrained: "openai/clip-vit-large-patch14"
+    max_length: 77                    # Max token length
+
+# -----------------------------------------------------------------------------
+# Diffusion Configuration
+# -----------------------------------------------------------------------------
+diffusion:
+  num_train_timesteps: 1000
+  beta_schedule: "squaredcos_cap_v2"  # linear, scaled_linear, squaredcos_cap_v2
+  beta_start: 0.00085
+  beta_end: 0.012
+  prediction_type: "epsilon"          # epsilon, v_prediction, sample
+  
+  # Sampling
+  num_inference_steps: 50             # Steps for generating samples
+  guidance_scale: 7.5                 # Classifier-free guidance scale
+  
+  # Training
+  snr_gamma: null                     # Min-SNR weighting (null to disable)
+  offset_noise: 0.1                   # Offset noise for better dark/light images
+
+# -----------------------------------------------------------------------------
+# Training Configuration
+# -----------------------------------------------------------------------------
+training:
+  # Basic
+  seed: 42
+  mixed_precision: "bf16"             # no, fp16, bf16
+  gradient_accumulation_steps: 1
+  max_train_steps: 500000
+  
+  # Optimization
+  optimizer:
+    type: "adamw"
+    learning_rate: 1.0e-4
+    weight_decay: 0.0
+    betas: [0.9, 0.999]
+    eps: 1.0e-8
+  
+  lr_scheduler:
+    type: "cosine"                    # constant, linear, cosine, cosine_with_restarts
+    warmup_steps: 1000
+    num_cycles: 1                     # For cosine_with_restarts
+  
+  # Gradient
+  max_grad_norm: 1.0
+  
+  # EMA
+  ema:
+    enabled: true
+    decay: 0.9999
+    update_after_step: 0
+    update_every: 1
+  
+  # Classifier-Free Guidance Training
+  cfg:
+    enabled: true
+    uncond_prob: 0.1                  # Probability of dropping text conditioning
+
+# -----------------------------------------------------------------------------
+# Checkpoint Configuration
+# -----------------------------------------------------------------------------
+checkpoint:
+  save_every_n_steps: 5000            # Save checkpoint every N steps
+  keep_last_n: 5                      # Keep only last N checkpoints
+  save_ema_separately: true           # Save EMA weights separately
+  resume_from_latest: true            # Auto-resume from latest checkpoint
+  checkpoint_dir: "outputs/checkpoints"  # Save to outputs directory
+  save_dir: "outputs"                 # Base output directory
+
+# -----------------------------------------------------------------------------
+# Evaluation Configuration
+# -----------------------------------------------------------------------------
+evaluation:
+  enabled: true                       # Enable evaluation for MNIST testing
+  # When to evaluate
+  eval_every_n_steps: 2000            # Run evaluation every 2k steps (faster for MNIST)
+  eval_at_start: false                # Evaluate before training starts
+  
+  # Sample Generation
+  num_samples: 10                     # One sample per digit
+  sample_prompts:                     # MNIST digit prompts
+    - "a photograph of the number 0"
+    - "a photograph of the number 1"
+    - "a photograph of the number 2"
+    - "a photograph of the number 3"
+    - "a photograph of the number 4"
+    - "a photograph of the number 5"
+    - "a photograph of the number 6"
+    - "a photograph of the number 7"
+    - "a photograph of the number 8"
+    - "a photograph of the number 9"
+  include_unconditional: false        # MNIST should be conditional only
+  
+  # FID Score
+  fid:
+    enabled: true
+    num_samples: 1000                 # Reduce for faster MNIST evaluation
+    batch_size: 64
+    reference_stats: null             # TODO: Generate MNIST reference stats
+  
+  # CLIP Score
+  clip_score:
+    enabled: true
+    num_samples: 500                  # Reduce for faster MNIST evaluation
+    batch_size: 64
+
+# -----------------------------------------------------------------------------
+# Data Configuration
+# -----------------------------------------------------------------------------
+data:
+  dataset: "mnist"  # Dataset name - MNIST for fast testing
+  dataset_path: null                  # Path to dataset (optional)
+  resolution: 256                     # Training resolution (MNIST is 28x28, upscaled to 256)
+  center_crop: true
+  random_flip: false  # Don't flip digits - they should maintain orientation
+  
+  # Multi-resolution (optional)
+  multi_resolution:
+    enabled: false
+    resolutions: [256, 384, 512]
+    resolution_probs: [0.3, 0.4, 0.3]
+  
+  # DataLoader
+  batch_size: 32                       # Per-GPU batch size (reduced for multi-GPU stability)
+  num_workers: 2                       # Minimal workers for multi-GPU
+  pin_memory: true
+  prefetch_factor: 2
+
+# -----------------------------------------------------------------------------
+# Logging Configuration
+# -----------------------------------------------------------------------------
+logging:
+  # MLflow
+  mlflow:
+    enabled: true
+    tracking_uri: "http://127.0.0.1:5000"
+    experiment_name: "stable-diffusion-training"
+    run_name: null                    # Auto-generated if null
+    log_every_n_steps: 10             # Log metrics every 10 steps for detailed tracking
+    log_images: true                  # Log generated images
+  
+  # Console
+  console:
+    log_every_n_steps: 500            # Print to console every 500 steps to reduce spam
+    progress_bar: false               # Disable tqdm progress bar
+
+# -----------------------------------------------------------------------------
+# Hardware Configuration
+# -----------------------------------------------------------------------------
+hardware:
+  accelerator: "gpu"
+  num_gpus: "auto"                    # auto, or specific number
+  strategy: "ddp"                     # ddp, fsdp, deepspeed

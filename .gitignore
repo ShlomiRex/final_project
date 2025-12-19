@@ -1,1 +1,11 @@
 latent_gpt.egg-info/
+**.pyc
+__pycache__/
+mlflow.db
+stable_diffusion_research/dataset_cache/
+stable_diffusion_research/mlruns/
+*.pt
+stable_diffusion_research/outputs/samples/
+stable_diffusion_research/slurm/logs/
+stable_diffusion_research/outputs/checkpoints/
+*.ckpt

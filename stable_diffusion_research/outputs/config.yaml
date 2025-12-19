@@ -1,0 +1,130 @@
+model:
+  unet:
+    in_channels: 4
+    out_channels: 4
+    model_channels: 128
+    channel_mult:
+    - 1
+    - 2
+    - 4
+    num_res_blocks: 2
+    attention_resolutions:
+    - 4
+    - 2
+    num_heads: 4
+    num_head_channels: 32
+    use_spatial_transformer: true
+    transformer_depth: 1
+    context_dim: 768
+    use_checkpoint: false
+    dropout: 0.0
+  vae:
+    pretrained: stabilityai/sd-vae-ft-mse
+    scale_factor: 0.18215
+  text_encoder:
+    pretrained: openai/clip-vit-large-patch14
+    max_length: 77
+diffusion:
+  num_train_timesteps: 1000
+  beta_schedule: squaredcos_cap_v2
+  beta_start: 0.00085
+  beta_end: 0.012
+  prediction_type: epsilon
+  num_inference_steps: 50
+  guidance_scale: 7.5
+  snr_gamma: null
+  offset_noise: 0.1
+training:
+  seed: 42
+  mixed_precision: bf16
+  gradient_accumulation_steps: 1
+  max_train_steps: 500000
+  optimizer:
+    type: adamw
+    learning_rate: 0.0001
+    weight_decay: 0.0
+    betas:
+    - 0.9
+    - 0.999
+    eps: 1.0e-08
+  lr_scheduler:
+    type: cosine
+    warmup_steps: 1000
+    num_cycles: 1
+  max_grad_norm: 1.0
+  ema:
+    enabled: true
+    decay: 0.9999
+    update_after_step: 0
+    update_every: 1
+  cfg:
+    enabled: true
+    uncond_prob: 0.1
+checkpoint:
+  save_every_n_steps: 5000
+  keep_last_n: 5
+  save_ema_separately: true
+  resume_from_latest: true
+  checkpoint_dir: outputs/checkpoints
+  save_dir: outputs
+evaluation:
+  enabled: true
+  eval_every_n_steps: 2000
+  eval_at_start: false
+  num_samples: 10
+  sample_prompts:
+  - a photograph of the number 0
+  - a photograph of the number 1
+  - a photograph of the number 2
+  - a photograph of the number 3
+  - a photograph of the number 4
+  - a photograph of the number 5
+  - a photograph of the number 6
+  - a photograph of the number 7
+  - a photograph of the number 8
+  - a photograph of the number 9
+  include_unconditional: false
+  fid:
+    enabled: true
+    num_samples: 1000
+    batch_size: 64
+    reference_stats: null
+  clip_score:
+    enabled: true
+    num_samples: 500
+    batch_size: 64
+data:
+  dataset: mnist
+  dataset_path: null
+  resolution: 256
+  center_crop: true
+  random_flip: false
+  multi_resolution:
+    enabled: false
+    resolutions:
+    - 256
+    - 384
+    - 512
+    resolution_probs:
+    - 0.3
+    - 0.4
+    - 0.3
+  batch_size: 32
+  num_workers: 2
+  pin_memory: true
+  prefetch_factor: 2
+logging:
+  mlflow:
+    enabled: true
+    tracking_uri: http://127.0.0.1:5000
+    experiment_name: stable-diffusion-training
+    run_name: null
+    log_every_n_steps: 10
+    log_images: true
+  console:
+    log_every_n_steps: 500
+    progress_bar: false
+hardware:
+  accelerator: gpu
+  num_gpus: auto
+  strategy: ddp

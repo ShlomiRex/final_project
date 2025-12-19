@@ -1,0 +1,41 @@
+# Multi-Resolution Training Configuration
+# Train on multiple resolutions for better generalization
+
+_base_: "../base.yaml"
+
+data:
+  resolution: 512                     # Max resolution
+  batch_size: 16
+  
+  # Multi-resolution training
+  multi_resolution:
+    enabled: true
+    resolutions: [256, 384, 512]
+    resolution_probs: [0.2, 0.3, 0.5]  # Probability of each resolution
+
+training:
+  max_train_steps: 500000
+  gradient_accumulation_steps: 2
+  
+  optimizer:
+    learning_rate: 1.0e-4
+
+checkpoint:
+  save_every_n_steps: 5000
+  keep_last_n: 5
+
+evaluation:
+  eval_every_n_steps: 5000
+  
+  # Evaluate at 512x512
+  fid:
+    num_samples: 2048
+    batch_size: 16
+  
+  clip_score:
+    num_samples: 256
+    batch_size: 16
+
+logging:
+  mlflow:
+    experiment_name: "stable-diffusion-multires"

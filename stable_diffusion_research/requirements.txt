@@ -1,0 +1,7 @@
+accelerate
+mlflow
+transformers
+diffusers
+datasets
+einops
+scipy

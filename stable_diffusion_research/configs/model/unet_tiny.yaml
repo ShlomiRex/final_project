@@ -1,0 +1,17 @@
+# Tiny UNet for fast MNIST testing
+# Much smaller than the default SD 1.5 architecture
+
+unet:
+  in_channels: 4
+  out_channels: 4
+  model_channels: 128          # Reduced from 320
+  channel_mult: [1, 2, 4]      # Only 3 levels instead of 4
+  num_res_blocks: 2
+  attention_resolutions: [4, 2]
+  num_heads: 4                 # Reduced from 8
+  num_head_channels: 32        # Reduced from 64
+  use_spatial_transformer: true
+  transformer_depth: 1
+  context_dim: 768             # Keep CLIP dimension
+  use_checkpoint: false
+  dropout: 0.0

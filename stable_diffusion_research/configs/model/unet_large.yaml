@@ -1,0 +1,20 @@
+# Large U-Net Configuration (~860M parameters)
+# Similar to Stable Diffusion 1.5
+
+_base_: "../base.yaml"
+
+model:
+  unet:
+    model_channels: 320
+    channel_mult: [1, 2, 4, 4]
+    num_res_blocks: 2
+    attention_resolutions: [4, 2, 1]
+    num_head_channels: 64
+    transformer_depth: 1
+    context_dim: 768
+    use_checkpoint: true
+
+  # Use larger CLIP model
+  text_encoder:
+    pretrained: "openai/clip-vit-large-patch14"
+    max_length: 77

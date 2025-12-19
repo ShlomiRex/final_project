@@ -1,0 +1,26 @@
+\section{Related Work}
+\label{sec:related_work}
+
+In this section, we discuss the existing literature relevant to text-to-image generation, focusing on the evolution from adversarial approaches to diffusion-based methods.
+
+\subsection{Generative Adversarial Networks for Image Generation}
+
+Generative Adversarial Networks (GANs) have been a dominant paradigm in image synthesis since their introduction. GANs consist of two competing neural networks—a generator that creates synthetic samples and a discriminator that classifies samples as real or fake. Through adversarial training, the generator learns to produce increasingly realistic images that can fool the discriminator.
+
+\subsection{Creative Adversarial Networks and Interactive Evolution}
+
+Creative Adversarial Networks (CAN) extend the GAN framework specifically for artistic image generation. The Deep Interactive Evolution (DeepIE) approach combines CAN with evolutionary algorithms to enable user-guided art creation. This methodology, trained on the WikiArt dataset, allows users to interactively guide the generation process through iterative selection and refinement.
+
+However, a significant limitation of the original CAN-DeepIE research is the absence of rigorous quantitative evaluation. The authors did not employ standard generative model evaluation metrics such as CLIP Score, Fréchet Inception Distance (FID), Inception Score (IS), or conduct human perceptual surveys to assess output quality. This omission makes objective comparison with other generative approaches challenging and limits the ability to quantitatively validate the claimed improvements in artistic quality and diversity.
+
+\subsection{Diffusion Models for Image Synthesis}
+
+Diffusion models represent a paradigm shift in generative modeling, operating through iterative denoising rather than adversarial competition. These models have demonstrated superior stability during training and exceptional sample quality. Unlike GANs, which can suffer from mode collapse and training instability, diffusion models provide more reliable convergence and greater control over the generation process.
+
+\subsection{Text-Conditioned Image Generation}
+
+The integration of text conditioning in image generation has been revolutionized by the development of CLIP (Contrastive Language-Image Pre-training). CLIP embeddings provide a powerful semantic bridge between natural language descriptions and visual content, enabling text-to-image models to generate images that align with textual prompts. This capability represents a significant advancement over earlier methods that lacked robust text understanding.
+
+\subsection{Gaps and Contributions}
+
+While GAN-based approaches like CAN-DeepIE have explored artistic generation, they lack the stability and quantitative evaluation necessary for rigorous scientific validation. Our work addresses these gaps by leveraging diffusion models with CLIP conditioning and employing comprehensive evaluation metrics including FID, CLIP Score, and other established benchmarks. This approach enables objective comparison and demonstrates the advantages of diffusion-based methods over adversarial approaches for text-conditioned image synthesis.

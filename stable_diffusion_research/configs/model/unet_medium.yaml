@@ -1,0 +1,15 @@
+# Medium U-Net Configuration (~500M parameters)
+# Good balance between quality and training speed
+
+_base_: "../base.yaml"
+
+model:
+  unet:
+    model_channels: 320
+    channel_mult: [1, 2, 4, 4]
+    num_res_blocks: 2
+    attention_resolutions: [4, 2, 1]
+    num_head_channels: 64
+    transformer_depth: 1
+    context_dim: 768
+    use_checkpoint: true

@@ -1,0 +1,17 @@
+# Flickr30k Dataset Configuration
+
+data:
+  dataset: "flickr30k"
+  dataset_name: "nlphuji/flickr30k"
+  dataset_path: null                  # Will use HuggingFace cache
+  cache_dir: "./dataset_cache"
+  
+  # Flickr30k specific
+  image_column: "image"
+  caption_column: "caption"
+  split: "test"                       # Flickr30k only has test split on HF
+  
+  # Preprocessing
+  resolution: 256
+  center_crop: true
+  random_flip: true

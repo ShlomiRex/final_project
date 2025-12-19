@@ -1,0 +1,54 @@
+\contentsline {section}{List of Illustrations}{2}{Doc-Start}%
+\contentsline {section}{List of Tables}{3}{Doc-Start}%
+\contentsline {section}{\numberline {1}Introduction}{5}{section.1}%
+\contentsline {section}{\numberline {2}Related Work}{5}{section.2}%
+\contentsline {subsection}{\numberline {2.1}Generative Adversarial Networks for Image Generation}{5}{subsection.2.1}%
+\contentsline {subsection}{\numberline {2.2}Creative Adversarial Networks and Interactive Evolution}{5}{subsection.2.2}%
+\contentsline {subsection}{\numberline {2.3}Diffusion Models for Image Synthesis}{6}{subsection.2.3}%
+\contentsline {subsection}{\numberline {2.4}Text-Conditioned Image Generation}{6}{subsection.2.4}%
+\contentsline {subsection}{\numberline {2.5}Gaps and Contributions}{6}{subsection.2.5}%
+\contentsline {section}{\numberline {3}Methodology}{6}{section.3}%
+\contentsline {subsection}{\numberline {3.1}Model Architecture}{6}{subsection.3.1}%
+\contentsline {subsubsection}{\numberline {3.1.1}UNet2DConditionModel}{6}{subsubsection.3.1.1}%
+\contentsline {subsubsection}{\numberline {3.1.2}Text Encoder}{7}{subsubsection.3.1.2}%
+\contentsline {subsection}{\numberline {3.2}Training Procedure}{7}{subsection.3.2}%
+\contentsline {subsubsection}{\numberline {3.2.1}Dataset and Preprocessing}{7}{subsubsection.3.2.1}%
+\contentsline {subsubsection}{\numberline {3.2.2}Noise Schedule}{7}{subsubsection.3.2.2}%
+\contentsline {subsubsection}{\numberline {3.2.3}Training Algorithm}{7}{subsubsection.3.2.3}%
+\contentsline {subsection}{\numberline {3.3}Inference with Classifier-Free Guidance}{7}{subsection.3.3}%
+\contentsline {subsubsection}{\numberline {3.3.1}Classifier-Free Guidance (CFG)}{7}{subsubsection.3.3.1}%
+\contentsline {subsubsection}{\numberline {3.3.2}Sampling Parameters}{8}{subsubsection.3.3.2}%
+\contentsline {subsection}{\numberline {3.4}Limitations}{8}{subsection.3.4}%
+\contentsline {section}{\numberline {4}Experimental Setup}{8}{section.4}%
+\contentsline {subsection}{\numberline {4.1}Hardware and Software Configuration}{8}{subsection.4.1}%
+\contentsline {subsection}{\numberline {4.2}Dataset}{8}{subsection.4.2}%
+\contentsline {section}{\numberline {5}Experiment 1: Baseline Training}{8}{section.5}%
+\contentsline {subsection}{\numberline {5.1}Objective}{8}{subsection.5.1}%
+\contentsline {subsection}{\numberline {5.2}Training Configuration}{8}{subsection.5.2}%
+\contentsline {subsection}{\numberline {5.3}Monitoring}{9}{subsection.5.3}%
+\contentsline {section}{\numberline {6}Experiment 2: Classifier-Free Guidance Ablation}{9}{section.6}%
+\contentsline {subsection}{\numberline {6.1}Objective}{9}{subsection.6.1}%
+\contentsline {subsection}{\numberline {6.2}Guidance Scale Values}{9}{subsection.6.2}%
+\contentsline {subsection}{\numberline {6.3}Evaluation Protocol}{9}{subsection.6.3}%
+\contentsline {subsection}{\numberline {6.4}Inference Parameters}{9}{subsection.6.4}%
+\contentsline {section}{\numberline {7}Experimental Procedure}{9}{section.7}%
+\contentsline {subsection}{\numberline {7.1}Training Workflow}{9}{subsection.7.1}%
+\contentsline {subsection}{\numberline {7.2}Generation Workflow}{10}{subsection.7.2}%
+\contentsline {subsection}{\numberline {7.3}Visualization}{10}{subsection.7.3}%
+\contentsline {section}{\numberline {8}Results}{10}{section.8}%
+\contentsline {subsection}{\numberline {8.1}Experiment 1: Baseline Training Results}{10}{subsection.8.1}%
+\contentsline {subsubsection}{\numberline {8.1.1}Training Convergence}{10}{subsubsection.8.1.1}%
+\contentsline {subsubsection}{\numberline {8.1.2}Model Capacity}{10}{subsubsection.8.1.2}%
+\contentsline {subsubsection}{\numberline {8.1.3}Qualitative Generation Quality}{10}{subsubsection.8.1.3}%
+\contentsline {subsection}{\numberline {8.2}Experiment 2: Classifier-Free Guidance Ablation}{10}{subsection.8.2}%
+\contentsline {subsubsection}{\numberline {8.2.1}Guidance Scale Impact}{10}{subsubsection.8.2.1}%
+\contentsline {subsubsection}{\numberline {8.2.2}Key Findings}{11}{subsubsection.8.2.2}%
+\contentsline {paragraph}{$w = 0$ (No Guidance):}{11}{section*.1}%
+\contentsline {paragraph}{$w = 5$ to $w = 10$ (Weak to Moderate):}{11}{section*.2}%
+\contentsline {paragraph}{$w = 20$ (Strong Guidance):}{11}{section*.3}%
+\contentsline {paragraph}{$w = 50$ to $w = 100$ (Extreme Guidance):}{11}{section*.4}%
+\contentsline {subsection}{\numberline {8.3}Visual Comparison}{11}{subsection.8.3}%
+\contentsline {subsection}{\numberline {8.4}Inference Performance}{11}{subsection.8.4}%
+\contentsline {subsubsection}{\numberline {8.4.1}Generation Speed}{11}{subsubsection.8.4.1}%
+\contentsline {subsubsection}{\numberline {8.4.2}Reproducibility}{11}{subsubsection.8.4.2}%
+\contentsline {subsection}{\numberline {8.5}Summary of Results}{12}{subsection.8.5}%

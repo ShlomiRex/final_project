@@ -1,0 +1,27 @@
+# LAION Subset Dataset Configuration
+# For larger scale training
+
+data:
+  dataset: "laion"
+  dataset_name: "laion/laion400m"
+  dataset_path: null
+  cache_dir: "./dataset_cache"
+  
+  # LAION specific
+  image_column: "image"
+  caption_column: "caption"
+  url_column: "url"                   # For downloading images
+  split: "train"
+  
+  # Filtering
+  min_image_size: 256
+  max_aspect_ratio: 2.0
+  min_aesthetic_score: 5.0            # If available
+  
+  # Preprocessing
+  resolution: 512
+  center_crop: false                  # Random crop for variety
+  random_flip: true
+  
+  # Streaming for large dataset
+  streaming: true

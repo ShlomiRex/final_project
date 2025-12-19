@@ -1,0 +1,17 @@
+# COCO Captions Dataset Configuration
+
+data:
+  dataset: "coco"
+  dataset_name: "HuggingFaceM4/COCO"
+  dataset_path: null
+  cache_dir: "./dataset_cache"
+  
+  # COCO specific
+  image_column: "image"
+  caption_column: "sentences_raw"     # List of captions
+  split: "train"
+  
+  # Preprocessing
+  resolution: 256
+  center_crop: true
+  random_flip: true

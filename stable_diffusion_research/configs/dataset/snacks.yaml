@@ -1,0 +1,38 @@
+# Matthijs/snacks Dataset Configuration
+# Food image classification dataset with 20 classes
+# Inherits from base configuration and overrides dataset-specific settings
+
+_base_: "../base.yaml"
+
+data:
+  dataset: "Matthijs/snacks"
+  dataset_name: "Matthijs/snacks"
+  dataset_path: null
+  cache_dir: "./dataset_cache"
+  
+  # Dataset specific
+  image_column: "image"
+  caption_column: "label"            # Use label as caption (class name)
+  split: "train"
+
+# Snacks-specific sample prompts for evaluation
+evaluation:
+  sample_prompts:
+    - "a photograph of an apple"
+    - "a photograph of a banana"
+    - "a photograph of a cake"
+    - "a photograph of a candy"
+    - "a photograph of a carrot"
+    - "a photograph of cookies"
+    - "a photograph of a doughnut"
+    - "a photograph of grapes"
+    - "a photograph of a hot dog"
+    - "a photograph of ice cream"
+    - "a photograph of juice"
+    - "a photograph of a muffin"
+    - "a photograph of an orange"
+    - "a photograph of a pineapple"
+    - "a photograph of a salad"
+    - "a photograph of strawberries"
+    - "a photograph of a waffle"
+    - "a photograph of watermelon"

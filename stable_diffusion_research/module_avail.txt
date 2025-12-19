@@ -1,0 +1,45 @@
+
+--------------------------------------------------------- /prefix/modules/all/Core ----------------------------------------------------------
+   Anaconda3/2022.05                    GCCcore/11.4.0                   binutils/2.34                     iimpi/2022a
+   Aspera-CLI/3.9.6.1467.159c5b1        GCCcore/12.2.0                   binutils/2.37                     imkl/2021.4.0
+   Autoconf/2.71                        GCCcore/12.3.0         (D)       binutils/2.38                     imkl/2022.1.0            (D)
+   Automake/1.16.5                      Go/1.17.3                        binutils/2.39                     intel-compilers/2022.1.0
+   Autotools/20220317                   Go/1.18.3                        binutils/2.40              (D)    intel/2022a              (D)
+   Bison/3.0.5                          Go/1.21.2              (D)       code-server/3.7.3                 libtool/2.4.7
+   Bison/3.8.2                   (D)    Java/11.0.16           (11)      cuDNN/8.4.1.50-CUDA-11.7.0        ncurses/6.2
+   CUDA/11.7.0                          Java/13.0.2            (D:13)    ffnvcodec/11.1.5.2                ncurses/6.3              (D)
+   CUDA/11.8.0                   (D)    M4/1.4.18                        flex/2.6.4                        pkgconf/1.8.0
+   GCC/11.2.0                           M4/1.4.19              (D)       foss/2021b                        rclone/1.57.0
+   GCC/11.3.0                           Maven/3.6.3                      foss/2022a                 (D)    zlib/1.2.11
+   GCC/11.4.0                    (D)    NVHPC/22.7-CUDA-11.7.0           gettext/0.21                      zlib/1.2.12
+   GCCcore/8.2.0                        OpenSSL/1.1                      gettext/0.21.1             (D)    zlib/1.2.13
+   GCCcore/9.3.0                        VTune/2023.2.0                   gh/2.20.2                         zlib/1.3.1               (D)
+   GCCcore/11.2.0                       ant/1.10.12-Java-11              gompi/2021b
+   GCCcore/11.3.0                       binutils/2.31.1                  gompi/2022a                (D)
+
+----------------------------------------------------------- /opt/apps/modulefiles -----------------------------------------------------------
+   anaconda2/5.3.0         hyphy/2.5.28             java/1.8.0.371   (D)    matlab/2019b                       pycharm/2025.3   (D)
+   anaconda3/5.3.0         hyphy/2.5.36      (D)    jmol/16.1.11            matlab/2021b                (D)    raxml-ng/v1
+   anaconda3/10.1.0 (D)    igv/2.8.12               jmol/16.1.41     (D)    mauve/2015-02-13                   spark/2.6.4
+   canu/2.1.1              indelible/1.03           julia/1.7.2             metashape/2.2.1                    sratoolkit/3.0.3
+   emacs/26.3              intel/19.1.0             mathematica/11.3        pycharm/prof_trial_2024.1.2        vscode/1.96.2
+   firefox/106             intellij/2020.2.3        mathematica/13.0        pycharm/2019.3.3
+   gromacs/2022.4          java/1.8.0.182           mathematica/13.1 (D)    pycharm/2023.2.1
+   hyphy/2.3.14            java/1.8.0.271           matlab/2018b            pycharm/2024.3.3
+
+--------------------------------------------- /opt/apps/spack/modules/linux-centos7-x86_64/Core ---------------------------------------------
+   binutils/2.33.1    gcc/5.5.0    gcc/8.3.0    gcc/9.2.0    gcc/10.3.0 (D)    intel-parallel-studio/cluster.2019.5
+
+  Where:
+   Aliases:  Aliases exist: foo/1.2.3 (1.2) means that "module load foo/1.2" will load foo/1.2.3
+   D:        Default Module
+
+If the avail list is too long consider trying:
+
+"module --default avail" or "ml -d av" to just list the default modules.
+"module overview" or "ml ov" to display the number of modules for each name.
+
+Use "module spider" to find all possible modules and extensions.
+Use "module keyword key1 key2 ..." to search for all possible modules matching any of the "keys".
+
+
