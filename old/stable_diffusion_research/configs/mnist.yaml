@@ -1,0 +1,84 @@
+# ============================================================================
+# MNIST Training Configuration
+# ============================================================================
+# Configuration for training a text-conditioned diffusion model on MNIST
+
+# Model Configuration
+model:
+  # U-Net Architecture (Tiny for MNIST testing)
+  unet:
+    in_channels: 1                    # Grayscale input
+    out_channels: 1
+    model_channels: 32                # Very small for MNIST
+    channel_mult: [1, 2, 2, 1]
+    num_res_blocks: 2
+    attention_resolutions: [4, 2]
+    num_heads: 4
+    num_head_channels: 32
+    use_spatial_transformer: true
+    transformer_depth: 1
+    context_dim: 512                  # CLIP ViT-B/32 embedding dimension
+    use_checkpoint: false
+    dropout: 0.0
+
+  # VAE (not used for MNIST - working directly with pixels)
+  vae:
+    pretrained: null
+    scale_factor: null
+
+  # Text Encoder (Pretrained, Frozen)
+  text_encoder:
+    pretrained: "openai/clip-vit-base-patch32"
+    max_length: 8                     # Short captions for digits
+
+# Diffusion Configuration
+diffusion:
+  num_train_timesteps: 1000
+  beta_schedule: "squaredcos_cap_v2"
+  beta_start: 0.00085
+  beta_end: 0.012
+  prediction_type: "epsilon"
+  
+  # Sampling
+  num_inference_steps: 50
+  guidance_scale: 8.0
+  
+  # Training
+  cfg_dropout_p: 0.1                  # Classifier-free guidance dropout
+
+# Data Configuration
+data:
+  dataset: "mnist"
+  resolution: 28                       # MNIST image size
+  channel: 1                           # Grayscale
+  crop: false
+  random_flip: false
+  batch_size: 512
+  num_workers: 4
+
+# Training Configuration
+training:
+  num_epochs: 5
+  learning_rate: 1e-3
+  beta1: 0.9                          # AdamW beta1
+  beta2: 0.999                        # AdamW beta2
+  weight_decay: 0.0
+  eps: 1e-8
+  
+  # Gradient clipping
+  max_grad_norm: 1.0
+  
+  # Logging and checkpointing
+  log_interval: 25                    # Log every N batches
+  checkpoint_interval: 1              # Save checkpoint every N epochs
+  sample_interval: 1                  # Generate samples every N epochs
+  
+  # Seed
+  seed: 422
+
+# Output Configuration
+output:
+  output_dir: "outputs/mnist"
+  save_checkpoint: true
+  save_samples: true
+  sample_count: 6

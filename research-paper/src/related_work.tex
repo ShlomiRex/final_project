@@ -7,11 +7,13 @@ In this section, we discuss the existing literature relevant to text-to-image ge
 
 Generative Adversarial Networks (GANs) have been a dominant paradigm in image synthesis since their introduction. GANs consist of two competing neural networks—a generator that creates synthetic samples and a discriminator that classifies samples as real or fake. Through adversarial training, the generator learns to produce increasingly realistic images that can fool the discriminator.
 
+\textbf{TODO: Revise this subsection}
+
 \subsection{Creative Adversarial Networks and Interactive Evolution}
 
-Creative Adversarial Networks (CAN) extend the GAN framework specifically for artistic image generation. The Deep Interactive Evolution (DeepIE) approach combines CAN with evolutionary algorithms to enable user-guided art creation. This methodology, trained on the WikiArt dataset, allows users to interactively guide the generation process through iterative selection and refinement.
+Creative Adversarial Networks (CAN) extend the GAN framework specifically for artistic image generation \cite{elgammal2017can}. The Deep Interactive Evolution (DeepIE) approach combines CAN with evolutionary algorithms to enable user-guided art creation. This methodology, trained on the WikiArt dataset, allows users to interactively guide the generation process through iterative selection and refinement.
 
-However, a significant limitation of the original CAN-DeepIE research is the absence of rigorous quantitative evaluation. The authors did not employ standard generative model evaluation metrics such as CLIP Score, Fréchet Inception Distance (FID), Inception Score (IS), or conduct human perceptual surveys to assess output quality. This omission makes objective comparison with other generative approaches challenging and limits the ability to quantitatively validate the claimed improvements in artistic quality and diversity.
+While the original CAN research provides foundational insights into artistic image generation, some implementations and extensions of this work lack rigorous quantitative evaluation. Notably, recent papers employing CAN-DeepIE do not employ standard generative model evaluation metrics such as CLIP Score, Fréchet Inception Distance (FID), Inception Score (IS), or conduct human perceptual surveys to assess output quality. Additionally, the generated samples from these implementations are often of limited visual quality. Our work addresses these significant gaps by leveraging diffusion models with comprehensive evaluation metrics and demonstrating substantially superior visual quality and quantitative performance.
 
 \subsection{Diffusion Models for Image Synthesis}
 
