@@ -20,3 +20,5 @@ dataset_cache/
 *.log
 *.out
 *.lock
+old/stable_diffusion/notebooks-old/complete_new_model/diffusers/outputs/
+old/stable_diffusion_research/mlruns/
