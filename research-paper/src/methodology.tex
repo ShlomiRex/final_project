@@ -13,7 +13,7 @@ Our approach builds upon the Denoising Diffusion Probabilistic Model (DDPM) fram
 We employ a custom U-Net architecture with cross-attention layers for text conditioning:
 
 \begin{itemize}
-    \item \textbf{Input/Output:} 1-channel grayscale images at 28×28 resolution
+    \item \textbf{Input/Output:} 1-channel grayscale images at 28$\times$28 resolution
     \item \textbf{Block structure:} Reduced parameter configuration with \texttt{block\_out\_channels=(32, \allowbreak 64, \allowbreak 64, \allowbreak 32)}
     \item \textbf{Layers per block:} 2 layers for computational efficiency
     \item \textbf{Down-sampling blocks:} DownBlock2D → CrossAttnDownBlock2D → CrossAttnDownBlock2D → DownBlock2D
@@ -89,7 +89,7 @@ To improve text-image alignment during generation, we implement classifier-free 
 
 \subsection{Limitations}
 \begin{itemize}
-    \item \textbf{Resolution:} Limited to 28×28 pixels due to MNIST dataset constraints
+    \item \textbf{Resolution:} Limited to 28$\times$28 pixels due to MNIST dataset constraints
     \item \textbf{Domain:} Single-domain (handwritten digits) rather than general image generation
     \item \textbf{Computational resources:} Training conducted on single GPU for baseline experiments
 \end{itemize}

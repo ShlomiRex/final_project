@@ -1,0 +1,188 @@
+\subsection{MNIST Text-to-Image Generation with Classifier-Free Guidance}
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=\textwidth]{../figures/experiments/mnist_prompts.png}
+    \caption{Generated images for prompt "A handwritten digit 3" across different guidance scales. Higher guidance scales produce sharper, more confident outputs with stronger adherence to the text prompt.}
+    \label{fig:mnist_prompts}
+\end{figure}
+
+\subsubsection{Objective}
+This experiment tests the fundamental principles of text-to-image generation using a diffusion-based architecture. By training on MNIST handwritten digits as a minimal-scale dataset, we investigate how the stable diffusion model handles image synthesis from text prompts and systematically evaluate the impact of Classifier-Free Guidance (CFG) on generation quality and text-image alignment.
+
+\subsubsection{Model Architecture}
+
+\textbf{Text Encoder (Frozen):}
+\begin{itemize}
+    \item \textbf{Model:} CLIP (openai/clip-vit-base-patch32)
+    \item \textbf{Embedding dimension:} 512
+    \item \textbf{Tokenizer max length:} 8 tokens (reduced from default 77)\footnote{Prompts are tokenized then padded or truncated to exactly 8 tokens. This keeps shapes fixed (batch, 8, 512) for CLIP embeddings and reduces unnecessary padding/compute versus the 77-token default. Longer prompts would be clipped beyond 8 tokens, which is acceptable here because prompts are intentionally short (e.g., "A handwritten digit 5").}
+    \item \textbf{Training:} Weights are frozen
+\end{itemize}
+
+\textbf{Denoising Network (U-Net):}
+
+The key design choice in the U-Net architecture is to train directly in pixel space without a VAE, which is viable for MNIST's low resolution (28$\times$28).
+
+\begin{itemize}
+    \item \textbf{Architecture:} Custom UNet2DConditionModel
+    \item \textbf{Input/Output:} 1 channel (grayscale), 28$\times$28 pixels
+    \item \textbf{Block channels:} (32, 64, 64, 32)
+    \item \textbf{Layers per block:} 2
+    \item \textbf{Down blocks:} DownBlock2D → CrossAttnDownBlock2D → CrossAttnDownBlock2D → DownBlock2D
+    \item \textbf{Up blocks:} UpBlock2D → CrossAttnUpBlock2D → CrossAttnUpBlock2D → UpBlock2D
+    \item \textbf{Cross-attention dimension:} 512 (matches CLIP embedding size)
+    \item \textbf{Total trainable parameters:} 3,140,385
+\end{itemize}
+
+\subsubsection{Dataset}
+
+\textbf{MNIST Handwritten Digits:}
+\begin{itemize}
+    \item \textbf{Training images:} 60,000
+    \item \textbf{Resolution:} 28$\times$28 pixels, grayscale
+    \item \textbf{Classes:} 10 digit classes (0-9)
+    \item \textbf{Text captions:} Automatically generated as "A handwritten digit \{label\}" (e.g., "A handwritten digit 5")
+    \item \textbf{Preprocessing:} Conversion to tensors with values normalized to [0, 1]
+\end{itemize}
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.8\textwidth]{../figures/experiments/mnist_training_dataset.png}
+    \caption{Sample images from MNIST training dataset showing handwritten digits (0-9) with corresponding class labels.}
+    \label{fig:mnist_training_dataset}
+\end{figure}
+
+\subsubsection{Training Configuration}
+
+\begin{itemize}
+    \item \textbf{Batch size:} 512
+    \item \textbf{Learning rate:} $10^{-3}$
+    \item \textbf{Optimizer:} AdamW
+    \item \textbf{Epochs:} 1 (initial validation), then 5 (extended training), and finally 20 epochs for final model
+    \item \textbf{Noise scheduler:} DDPM with squared cosine beta schedule
+    \item \textbf{Timesteps:} 1,000
+    \item \textbf{Loss function:} Mean Squared Error (MSE) between predicted and actual noise
+\end{itemize}
+
+\textbf{Training Pipeline per Batch:}
+\begin{enumerate}
+    \item Convert digit labels to text captions using CLIP tokenizer
+    \item Encode captions to semantic embeddings via frozen CLIP text encoder [batch, 8, 512]
+    \item Sample random timestep $t \sim \text{Uniform}(0, 1000)$ for each image
+    \item Add Gaussian noise to images: $x_t = \sqrt{\bar{\alpha}_t} x_0 + \sqrt{1-\bar{\alpha}_t} \epsilon$
+    \item Predict noise: $\epsilon_\theta(x_t, t, c_\text{text})$ using UNet with cross-attention conditioning
+    \item Calculate MSE loss: $\mathcal{L} = \|\epsilon - \epsilon_\theta(x_t, t, c_\text{text})\|^2$
+    \item Backpropagate and update UNet parameters only (CLIP remains frozen)
+\end{enumerate}
+
+\textbf{Monitoring:}
+\begin{itemize}
+    \item Loss tracking every 25 steps
+    \item Final epoch loss reporting
+    \item Visual inspection of generated samples
+\end{itemize}
+
+\subsubsection{Inference and Classifier-Free Guidance}
+
+\textbf{Basic Sampling (Without CFG):}
+\begin{itemize}
+    \item Initialize random noise tensor: $x_T \sim \mathcal{N}(0, I)$
+    \item Encode text prompt via CLIP
+    \item Iteratively denoise for 50 steps using DDPM scheduler
+    \item Post-process: normalize output to [0, 255] for visualization
+\end{itemize}
+
+\textbf{Classifier-Free Guidance (CFG):}
+
+CFG enables stronger text conditioning by computing both conditional and unconditional predictions:
+
+\begin{enumerate}
+    \item \textbf{Dual embeddings:}
+    \begin{itemize}
+        \item Conditional: Text prompt → CLIP embedding $c_\text{text}$
+        \item Unconditional: Empty string "" → CLIP embedding $c_\text{null}$
+    \end{itemize}
+    \item \textbf{Guidance formula:}
+    \[
+    \epsilon_\text{guided} = \epsilon_\theta(x_t, t, c_\text{null}) + w \cdot (\epsilon_\theta(x_t, t, c_\text{text}) - \epsilon_\theta(x_t, t, c_\text{null}))
+    \]
+    where $w$ is the guidance scale.
+    \item \textbf{Effect:} Higher $w$ → stronger adherence to text prompt
+\end{enumerate}
+
+\textbf{Inference Parameters:}
+\begin{itemize}
+    \item \textbf{Scheduler:} DDPM with squared cosine schedule
+    \item \textbf{Number of inference steps:} 50
+    \item \textbf{Random seed:} 422 (for reproducibility)
+    \item \textbf{Guidance scales tested:} $w \in \{0, 5, 10, 20, 50, 100\}$
+\end{itemize}
+
+\subsubsection{Results}
+
+Figure~\ref{fig:mnist_generation} presents a comprehensive evaluation of the model's generation capabilities across all digit classes and various guidance scales. This systematic comparison demonstrates how the guidance scale parameter $w$ influences both image quality and text-prompt adherence across different digit classes.
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=\textwidth]{../figures/experiments/mnist_generation.png}
+    \caption{Comprehensive generation results for all MNIST digit classes (0-9, rows) across different guidance scales ($w \in \{0, 1, 2, 3, 5, 10, 20\}$, columns). Each row shows generations for the prompt "A handwritten digit X" where X corresponds to the digit class. All images generated using 50 inference steps. This visualization demonstrates the model's ability to generate diverse digits with varying degrees of text-prompt adherence controlled by the guidance scale parameter.}
+    \label{fig:mnist_generation}
+\end{figure}
+
+\textbf{Extended Training Results:}
+
+To evaluate the impact of extended training, we trained the model for 20 epochs and regenerated samples across all digit classes. Figure~\ref{fig:mnist_generation_20epochs} shows the improved generation quality achieved with extended training, demonstrating better convergence and more consistent digit generation across all classes.
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=\textwidth]{../figures/experiments/mnist_generation_20epochs.png}
+    \caption{Generation results after 20 epochs of training for all MNIST digit classes (0-9, rows) across different guidance scales ($w \in \{0, 1, 2, 3, 5, 10, 20\}$, columns). All images generated using 50 inference steps. Compared to Figure~\ref{fig:mnist_generation}, the extended training produces sharper digits with improved text-prompt alignment and reduced artifacts, particularly noticeable at higher guidance scales.}
+    \label{fig:mnist_generation_20epochs}
+\end{figure}
+
+\subsubsection{Guidance-Scale ($w$) Ablation Study}
+
+We systematically evaluated the impact of guidance scale on generation quality:
+
+\textbf{Tested Guidance Scales:}
+\begin{itemize}
+    \item $w = 0$: Unconditional generation (no text guidance)
+    \item $w = 5$: Weak guidance
+    \item $w = 10$: Moderate guidance
+    \item $w = 20$: Strong guidance
+    \item $w = 50$: Very strong guidance
+    \item $w = 100$: Maximum guidance
+\end{itemize}
+
+\textbf{Evaluation Protocol:}
+\begin{enumerate}
+    \item Generate images with fixed prompt: "A handwritten digit \{0-9\}"
+    \item Use fixed random seed (422) set within the generation function, ensuring consistent initial noise for each guidance scale comparison
+    \item Apply 50 denoising steps per image
+    \item Qualitatively assess:
+    \begin{itemize}
+        \item Image clarity and sharpness
+        \item Adherence to text prompt (correct digit class)
+        \item Presence of artifacts or distortions
+        \item Overall sample quality
+    \end{itemize}
+\end{enumerate}
+
+\textbf{Expected Results:}
+\begin{itemize}
+    \item $w = 0$: Random digit generation (unconditional)
+    \item $w = 5$-$10$: Balanced quality and prompt following
+    \item $w = 20$-$50$: Strong prompt adherence with sharp outputs
+    \item $w = 100$: Potential over-saturation and artifacts
+\end{itemize}
+
+\subsubsection{Visualization}
+
+Generated images displayed using matplotlib with:
+\begin{itemize}
+    \item Grayscale colormap
+    \item Grid layout for guidance scale comparison (1 row $\times$ 6 columns)
+    \item Individual subplot titles showing guidance scale values
+    \item Tight layout to prevent overlap
+\end{itemize}
