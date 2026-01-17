@@ -22,3 +22,7 @@ dataset_cache/
 *.lock
 old/stable_diffusion/notebooks-old/complete_new_model/diffusers/outputs/
 old/stable_diffusion_research/mlruns/
+
+slurm/logs/
+notebooks/.ipynb_checkpoints/
+research-paper/src/main.synctex.gz
