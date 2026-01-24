@@ -26,3 +26,4 @@ old/stable_diffusion_research/mlruns/
 slurm/logs/
 notebooks/.ipynb_checkpoints/
 research-paper/src/main.synctex.gz
+outputs/
