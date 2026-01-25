@@ -1,9 +1,9 @@
 \subsection{CIFAR-10 Text-to-Image Generation with Classifier-Free Guidance}
 
-\begin{figure}[h]
+\begin{figure}[htbp]
     \centering
-    \includegraphics[width=\textwidth]{../figures/experiments/samples_w10.png}
-    \caption{Generated CIFAR-10 images for all 10 classes using guidance scale $w=10$. Each row shows 4 samples for a class: airplane, automobile, bird, cat, deer, dog, frog, horse, ship, and truck. The model demonstrates the ability to generate diverse natural images conditioned on text prompts.}
+    \includegraphics[width=0.7\textwidth,height=0.85\textheight,keepaspectratio]{../figures/experiments/samples_w10.png}
+    \caption[Generated CIFAR-10 images for all 10 classes at guidance scale $w=10$]{Generated CIFAR-10 images for all 10 classes using guidance scale $w=10$. Each row shows 4 samples for a class: airplane, automobile, bird, cat, deer, dog, frog, horse, ship, and truck. The model demonstrates the ability to generate diverse natural images conditioned on text prompts.}
     \label{fig:cifar10_samples}
 \end{figure}
 
@@ -138,10 +138,10 @@ Two complementary metrics were used to evaluate generation quality:
 
 Figure~\ref{fig:cifar10_fid_accuracy} shows the relationship between guidance scale and both metrics, revealing the quality-adherence trade-off characteristic of classifier-free guidance.
 
-\begin{figure}[h]
+\begin{figure}[htbp]
     \centering
-    \includegraphics[width=\textwidth]{../figures/experiments/fid_and_accuracy.png}
-    \caption{FID Score (left) and Classification Accuracy (right) vs. Guidance Scale for CIFAR-10 generation. Lower FID indicates better image quality, while higher accuracy indicates better prompt adherence. The optimal guidance scale $w=2$ achieves the best FID (56.28), while $w=10$ achieves the highest accuracy (16.50\%).}
+    \includegraphics[width=0.85\textwidth,keepaspectratio]{../figures/experiments/fid_and_accuracy.png}
+    \caption[CIFAR-10 FID score and classification accuracy vs. guidance scale]{FID Score (left) and Classification Accuracy (right) vs. Guidance Scale for CIFAR-10 generation. Lower FID indicates better image quality, while higher accuracy indicates better prompt adherence. The optimal guidance scale $w=2$ achieves the best FID (56.28), while $w=10$ achieves the highest accuracy (16.50\%).}
     \label{fig:cifar10_fid_accuracy}
 \end{figure}
 
@@ -161,10 +161,10 @@ Figure~\ref{fig:cifar10_fid_accuracy} shows the relationship between guidance sc
 
 Figure~\ref{fig:cifar10_tradeoff} visualizes the fundamental trade-off between image quality (FID) and text-prompt adherence (accuracy) across guidance scales.
 
-\begin{figure}[h]
+\begin{figure}[htbp]
     \centering
-    \includegraphics[width=0.8\textwidth]{../figures/experiments/quality_vs_adherence.png}
-    \caption{Quality vs. Prompt Adherence trade-off curve for CIFAR-10 generation. Each point represents a different guidance scale. The x-axis shows FID (inverted, so rightward is better quality), and the y-axis shows classification accuracy. The curve illustrates that increasing guidance improves prompt adherence at the cost of image quality.}
+    \includegraphics[width=0.65\textwidth,keepaspectratio]{../figures/experiments/quality_vs_adherence.png}
+    \caption[Trade-off between image quality (FID) and text adherence (accuracy)]{Quality vs. Prompt Adherence trade-off curve for CIFAR-10 generation. Each point represents a different guidance scale. The x-axis shows FID (inverted, so rightward is better quality), and the y-axis shows classification accuracy. The curve illustrates that increasing guidance improves prompt adherence at the cost of image quality.}
     \label{fig:cifar10_tradeoff}
 \end{figure}
 
@@ -172,10 +172,10 @@ Figure~\ref{fig:cifar10_tradeoff} visualizes the fundamental trade-off between i
 
 Figure~\ref{fig:cifar10_confusion} shows the confusion matrices for all guidance scales, revealing which classes are most challenging for the model to generate correctly.
 
-\begin{figure}[h]
+\begin{figure}[htbp]
     \centering
-    \includegraphics[width=\textwidth]{../figures/experiments/confusion_matrices.png}
-    \caption{Normalized confusion matrices for CIFAR-10 generation across all guidance scales ($w \in \{0, 2, 5, 10\}$). Rows represent the intended class from the text prompt, columns represent the classifier's prediction. Diagonal values indicate correct generation. The matrices reveal that some classes (e.g., truck, ship) are easier to generate correctly than others (e.g., cat, dog).}
+    \includegraphics[width=0.95\textwidth,keepaspectratio]{../figures/experiments/confusion_matrices.png}
+    \caption[Per-class generation accuracy shown via confusion matrices for all guidance scales]{Normalized confusion matrices for CIFAR-10 generation across all guidance scales ($w \in \{0, 2, 5, 10\}$). Rows represent the intended class from the text prompt, columns represent the classifier's prediction. Diagonal values indicate correct generation. The matrices reveal that some classes (e.g., truck, ship) are easier to generate correctly than others (e.g., cat, dog).}
     \label{fig:cifar10_confusion}
 \end{figure}
 

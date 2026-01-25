@@ -7,12 +7,8 @@ Stable Diffusion is a state-of-the-art diffusion-based generative model that syn
 \begin{figure}[h]
     \centering
     \includegraphics[width=0.8\textwidth]{../figures/ddpm_noise.png}
-    \caption{The iterative denoising process in diffusion models: starting from random noise, the model progressively refines the image through multiple steps.}
+    \caption[Iterative denoising process in diffusion models, from noise to image]{The iterative denoising process in diffusion models: starting from random noise, the model progressively refines the image through multiple steps.}
     \label{fig:ddpm_noise}
 \end{figure}
 
 In this project, we develop a text-to-image generation model leveraging Stable Diffusion with CLIP-based conditioning. Our implementation demonstrates substantial performance improvements over existing GAN-based approaches. The superior performance of diffusion models stems from their inherent stability, superior sample quality, and greater flexibility in conditioning mechanisms. We explore these advantages through comprehensive experiments using established evaluation metrics and comparative analysis, establishing diffusion models as a superior alternative to adversarial methods for text-conditioned image synthesis.
-
-\textbf{[TODO: Revise the following paragraph]}
-
-The paper is structured as follows: Section~\ref{sec:related_work} reviews related work and existing approaches in generative modeling. Section~\ref{sec:methodology} provides a detailed description of our Stable Diffusion architecture, CLIP conditioning mechanism, and training approach. Section~\ref{sec:experiments} presents our experimental setup and training protocol. Section~\ref{sec:results} presents the results of our experiments and comparative analysis with GAN-based methods. Finally, Section~\ref{sec:discussion} discusses the implications of our findings, the advantages of diffusion-based models, and directions for future work.

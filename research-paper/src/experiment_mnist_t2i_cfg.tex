@@ -1,9 +1,9 @@
 \subsection{MNIST Text-to-Image Generation with Classifier-Free Guidance}
 
-\begin{figure}[h]
+\begin{figure}[htbp]
     \centering
-    \includegraphics[width=\textwidth]{../figures/experiments/mnist_prompts.png}
-    \caption{Generated images for prompt "A handwritten digit 3" across different guidance scales. Higher guidance scales produce sharper, more confident outputs with stronger adherence to the text prompt.}
+    \includegraphics[width=0.85\textwidth,keepaspectratio]{../figures/experiments/mnist_prompts.png}
+    \caption[Effect of guidance scale on MNIST digit generation quality]{Generated images for prompt "A handwritten digit 3" across different guidance scales. Higher guidance scales produce sharper, more confident outputs with stronger adherence to the text prompt.}
     \label{fig:mnist_prompts}
 \end{figure}
 
@@ -46,10 +46,10 @@ The key design choice in the U-Net architecture is to train directly in pixel sp
     \item \textbf{Preprocessing:} Conversion to tensors with values normalized to [0, 1]
 \end{itemize}
 
-\begin{figure}[h]
+\begin{figure}[htbp]
     \centering
-    \includegraphics[width=0.8\textwidth]{../figures/experiments/mnist_training_dataset.png}
-    \caption{Sample images from MNIST training dataset showing handwritten digits (0-9) with corresponding class labels.}
+    \includegraphics[width=0.55\textwidth,keepaspectratio]{../figures/experiments/mnist_training_dataset.png}
+    \caption[Sample handwritten digits (0-9) from MNIST training set]{Sample images from MNIST training dataset showing handwritten digits (0-9) with corresponding class labels.}
     \label{fig:mnist_training_dataset}
 \end{figure}
 
@@ -58,16 +58,16 @@ The key design choice in the U-Net architecture is to train directly in pixel sp
 \begin{itemize}
     \item \textbf{Batch size:} 512
     \item \textbf{Learning rate:} $10^{-3}$
-    \item \textbf{Optimizer:} AdamW
-    \item \textbf{Epochs:} 1 (initial validation), then 5 (extended training), and finally 20 epochs for final model
-    \item \textbf{Noise scheduler:} DDPM with squared cosine beta schedule
+    \item \textbf{Optimizer:} AdamW: \texttt{torch.optim.AdamW(unet.parameters(), lr=1e-3)}
+    \item \textbf{Epochs:} 20 continuous training epochs with checkpoints saved at epochs 5, 10, 15, and 20
+    \item \textbf{Noise scheduler:} DDPM with squared cosine beta schedule: \texttt{DDPMScheduler(num\_train\_timesteps=1000, beta\_schedule="squaredcos\_cap\_v2")}
     \item \textbf{Timesteps:} 1,000
     \item \textbf{Loss function:} Mean Squared Error (MSE) between predicted and actual noise
 \end{itemize}
 
 \textbf{Training Pipeline per Batch:}
 \begin{enumerate}
-    \item Convert digit labels to text captions using CLIP tokenizer
+    \item Convert digit labels to text captions using CLIP tokenizer. Format: \texttt{"A handwritten digit \{label\}"} where $label \in \{0, 1, ..., 9\}$
     \item Encode captions to semantic embeddings via frozen CLIP text encoder [batch, 8, 512]
     \item Sample random timestep $t \sim \text{Uniform}(0, 1000)$ for each image
     \item Add Gaussian noise to images: $x_t = \sqrt{\bar{\alpha}_t} x_0 + \sqrt{1-\bar{\alpha}_t} \epsilon$
@@ -75,13 +75,6 @@ The key design choice in the U-Net architecture is to train directly in pixel sp
     \item Calculate MSE loss: $\mathcal{L} = \|\epsilon - \epsilon_\theta(x_t, t, c_\text{text})\|^2$
     \item Backpropagate and update UNet parameters only (CLIP remains frozen)
 \end{enumerate}
-
-\textbf{Monitoring:}
-\begin{itemize}
-    \item Loss tracking every 25 steps
-    \item Final epoch loss reporting
-    \item Visual inspection of generated samples
-\end{itemize}
 
 \subsubsection{Inference and Classifier-Free Guidance}
 
@@ -104,10 +97,20 @@ CFG enables stronger text conditioning by computing both conditional and uncondi
         \item Unconditional: Empty string "" → CLIP embedding $c_\text{null}$
     \end{itemize}
     \item \textbf{Guidance formula:}
-    \[
-    \epsilon_\text{guided} = \epsilon_\theta(x_t, t, c_\text{null}) + w \cdot (\epsilon_\theta(x_t, t, c_\text{text}) - \epsilon_\theta(x_t, t, c_\text{null}))
-    \]
-    where $w$ is the guidance scale.
+    \begin{equation}
+        \tilde{\boldsymbol{\epsilon}} = \boldsymbol{\epsilon}_\text{uncond} + w \cdot (\boldsymbol{\epsilon}_\text{cond} - \boldsymbol{\epsilon}_\text{uncond})
+        \label{eq:cfg}
+    \end{equation}
+    where $w$ is the guidance scale, $\boldsymbol{\epsilon}_\text{uncond} = \text{UNet}(x_t, t, c_\text{null})$, and $\boldsymbol{\epsilon}_\text{cond} = \text{UNet}(x_t, t, c_\text{text})$.
+    
+    \textbf{Implementation in Experiment 1:}
+        \footnote{The \texttt{.chunk(2)} operation splits the concatenated noise predictions (which contains both unconditional and conditional predictions stacked together) into two equal tensors. The guided noise prediction is then computed using Equation~\ref{eq:cfg}, which is passed to the scheduler's step function to iteratively denoise the latent representation.}
+    \begin{verbatim}
+    noise_pred_uncond, noise_pred_text = noise_pred.chunk(2)
+    noise_pred = noise_pred_uncond + guidance_scale * \
+                 (noise_pred_text - noise_pred_uncond)
+    \end{verbatim}
+    
     \item \textbf{Effect:} Higher $w$ → stronger adherence to text prompt
 \end{enumerate}
 
@@ -121,12 +124,25 @@ CFG enables stronger text conditioning by computing both conditional and uncondi
 
 \subsubsection{Results}
 
+\textbf{Training Convergence:}
+
+Figure~\ref{fig:mnist_loss} demonstrates the training convergence of the diffusion model over 20 epochs. The curve demonstrates rapid initial convergence followed by plateau, indicating successful optimization of the diffusion model’s noise prediction task.
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.6\textwidth,keepaspectratio]{../figures/experiments/mnist_loss_graph.png}
+    \caption[Training loss convergence over 20 epochs]{Training loss curve of experiment 1.}
+    \label{fig:mnist_loss}
+\end{figure}
+
+\textbf{Generation Quality Assessment:}
+
 Figure~\ref{fig:mnist_generation} presents a comprehensive evaluation of the model's generation capabilities across all digit classes and various guidance scales. This systematic comparison demonstrates how the guidance scale parameter $w$ influences both image quality and text-prompt adherence across different digit classes.
 
-\begin{figure}[h]
+\begin{figure}[htbp]
     \centering
-    \includegraphics[width=\textwidth]{../figures/experiments/mnist_generation.png}
-    \caption{Comprehensive generation results for all MNIST digit classes (0-9, rows) across different guidance scales ($w \in \{0, 1, 2, 3, 5, 10, 20\}$, columns). Each row shows generations for the prompt "A handwritten digit X" where X corresponds to the digit class. All images generated using 50 inference steps. This visualization demonstrates the model's ability to generate diverse digits with varying degrees of text-prompt adherence controlled by the guidance scale parameter.}
+    \includegraphics[width=0.70\textwidth,keepaspectratio]{../figures/experiments/mnist_generation.png}
+    \caption[MNIST generation for all digits (0-9) across guidance scales $w=0$ to $w=20$]{Comprehensive generation results for all MNIST digit classes (0-9, rows) across different guidance scales ($w \in \{0, 1, 2, 3, 5, 10, 20\}$, columns). Each row shows generations for the prompt "A handwritten digit X" where X corresponds to the digit class. All images generated using 50 inference steps.}
     \label{fig:mnist_generation}
 \end{figure}
 
@@ -134,10 +150,10 @@ Figure~\ref{fig:mnist_generation} presents a comprehensive evaluation of the mod
 
 To evaluate the impact of extended training, we trained the model for 20 epochs and regenerated samples across all digit classes. Figure~\ref{fig:mnist_generation_20epochs} shows the improved generation quality achieved with extended training, demonstrating better convergence and more consistent digit generation across all classes.
 
-\begin{figure}[h]
+\begin{figure}[htbp]
     \centering
-    \includegraphics[width=\textwidth]{../figures/experiments/mnist_generation_20epochs.png}
-    \caption{Generation results after 20 epochs of training for all MNIST digit classes (0-9, rows) across different guidance scales ($w \in \{0, 1, 2, 3, 5, 10, 20\}$, columns). All images generated using 50 inference steps. Compared to Figure~\ref{fig:mnist_generation}, the extended training produces sharper digits with improved text-prompt alignment and reduced artifacts, particularly noticeable at higher guidance scales.}
+    \includegraphics[width=0.7\textwidth,keepaspectratio]{../figures/experiments/mnist_generation_20epochs.png}
+    \caption[Improved MNIST generation after extended training (20 epochs)]{Generation results after 20 epochs of training for all MNIST digit classes (0-9, rows) across different guidance scales ($w \in \{0, 1, 2, 3, 5, 10, 20\}$, columns). All images generated using 50 inference steps. Compared to Figure~\ref{fig:mnist_generation}, the extended training produces sharper digits with improved text-prompt alignment and reduced artifacts, particularly noticeable at higher guidance scales.}
     \label{fig:mnist_generation_20epochs}
 \end{figure}
 

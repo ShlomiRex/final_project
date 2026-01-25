@@ -1,62 +1,37 @@
-\contentsline {section}{List of Illustrations}{2}{Doc-Start}%
-\contentsline {section}{List of Tables}{3}{Doc-Start}%
-\contentsline {section}{\numberline {1}Introduction}{5}{section.1}%
-\contentsline {section}{\numberline {2}Related Work}{5}{section.2}%
-\contentsline {subsection}{\numberline {2.1}Generative Adversarial Networks for Image Generation}{5}{subsection.2.1}%
-\contentsline {subsection}{\numberline {2.2}Creative Adversarial Networks and Interactive Evolution}{6}{subsection.2.2}%
-\contentsline {subsection}{\numberline {2.3}Diffusion Models for Image Synthesis}{6}{subsection.2.3}%
-\contentsline {subsection}{\numberline {2.4}Text-Conditioned Image Generation}{6}{subsection.2.4}%
-\contentsline {subsection}{\numberline {2.5}Gaps and Contributions}{6}{subsection.2.5}%
-\contentsline {section}{\numberline {3}Experiments}{6}{section.3}%
-\contentsline {subsection}{\numberline {3.1}Experimental Setup}{6}{subsection.3.1}%
-\contentsline {subsubsection}{\numberline {3.1.1}Hardware Environment}{6}{subsubsection.3.1.1}%
-\contentsline {subsubsection}{\numberline {3.1.2}Software Environment}{7}{subsubsection.3.1.2}%
-\contentsline {subsubsection}{\numberline {3.1.3}Distributed Training Considerations}{7}{subsubsection.3.1.3}%
-\contentsline {subsection}{\numberline {3.2}MNIST Text-to-Image Generation with Classifier-Free Guidance}{7}{subsection.3.2}%
-\contentsline {subsubsection}{\numberline {3.2.1}Objective}{7}{subsubsection.3.2.1}%
-\contentsline {subsubsection}{\numberline {3.2.2}Model Architecture}{7}{subsubsection.3.2.2}%
-\contentsline {subsubsection}{\numberline {3.2.3}Dataset}{8}{subsubsection.3.2.3}%
-\contentsline {subsubsection}{\numberline {3.2.4}Training Configuration}{8}{subsubsection.3.2.4}%
-\contentsline {subsubsection}{\numberline {3.2.5}Inference and Classifier-Free Guidance}{9}{subsubsection.3.2.5}%
-\contentsline {subsubsection}{\numberline {3.2.6}Results}{9}{subsubsection.3.2.6}%
-\contentsline {subsubsection}{\numberline {3.2.7}Guidance-Scale ($w$) Ablation Study}{10}{subsubsection.3.2.7}%
-\contentsline {subsubsection}{\numberline {3.2.8}Visualization}{10}{subsubsection.3.2.8}%
-\contentsline {subsection}{\numberline {3.3}CIFAR-10 Text-to-Image Generation with Classifier-Free Guidance}{10}{subsection.3.3}%
-\contentsline {subsubsection}{\numberline {3.3.1}Objective}{10}{subsubsection.3.3.1}%
-\contentsline {subsubsection}{\numberline {3.3.2}Model Architecture}{10}{subsubsection.3.3.2}%
-\contentsline {subsubsection}{\numberline {3.3.3}Dataset}{11}{subsubsection.3.3.3}%
-\contentsline {subsubsection}{\numberline {3.3.4}Training Configuration}{11}{subsubsection.3.3.4}%
-\contentsline {subsubsection}{\numberline {3.3.5}Inference Configuration}{12}{subsubsection.3.3.5}%
-\contentsline {subsubsection}{\numberline {3.3.6}Evaluation Metrics}{12}{subsubsection.3.3.6}%
-\contentsline {subsubsection}{\numberline {3.3.7}Results}{12}{subsubsection.3.3.7}%
-\contentsline {subsubsection}{\numberline {3.3.8}Quality vs. Adherence Trade-off}{12}{subsubsection.3.3.8}%
-\contentsline {subsubsection}{\numberline {3.3.9}Per-Class Analysis}{13}{subsubsection.3.3.9}%
-\contentsline {subsubsection}{\numberline {3.3.10}Comparison with MNIST Experiment}{13}{subsubsection.3.3.10}%
-\contentsline {subsubsection}{\numberline {3.3.11}Discussion}{13}{subsubsection.3.3.11}%
-\contentsline {subsubsection}{\numberline {3.3.12}Limitations and Future Work}{13}{subsubsection.3.3.12}%
-\contentsline {section}{\numberline {4}Results}{13}{section.4}%
-\contentsline {subsection}{\numberline {4.1}Experiment 1: Baseline Training Results}{14}{subsection.4.1}%
-\contentsline {subsubsection}{\numberline {4.1.1}Training Convergence}{14}{subsubsection.4.1.1}%
-\contentsline {subsubsection}{\numberline {4.1.2}Model Capacity}{14}{subsubsection.4.1.2}%
-\contentsline {subsubsection}{\numberline {4.1.3}Qualitative Generation Quality}{14}{subsubsection.4.1.3}%
-\contentsline {subsection}{\numberline {4.2}Experiment 2: Classifier-Free Guidance Ablation}{14}{subsection.4.2}%
-\contentsline {subsubsection}{\numberline {4.2.1}Guidance Scale Impact}{14}{subsubsection.4.2.1}%
-\contentsline {subsubsection}{\numberline {4.2.2}Key Findings}{14}{subsubsection.4.2.2}%
-\contentsline {paragraph}{$w = 0$ (No Guidance):}{14}{section*.1}%
-\contentsline {paragraph}{$w = 5$ to $w = 10$ (Weak to Moderate):}{14}{section*.2}%
-\contentsline {paragraph}{$w = 20$ (Strong Guidance):}{14}{section*.3}%
-\contentsline {paragraph}{$w = 50$ to $w = 100$ (Extreme Guidance):}{15}{section*.4}%
-\contentsline {subsection}{\numberline {4.3}Visual Comparison}{15}{subsection.4.3}%
-\contentsline {subsection}{\numberline {4.4}Inference Performance}{15}{subsection.4.4}%
-\contentsline {subsubsection}{\numberline {4.4.1}Generation Speed}{15}{subsubsection.4.4.1}%
-\contentsline {subsubsection}{\numberline {4.4.2}Reproducibility}{15}{subsubsection.4.4.2}%
-\contentsline {subsection}{\numberline {4.5}Summary of Results}{15}{subsection.4.5}%
-\contentsline {subsubsection}{\numberline {4.5.1}MNIST Experiment Summary}{15}{subsubsection.4.5.1}%
-\contentsline {subsubsection}{\numberline {4.5.2}CIFAR-10 Experiment Summary}{15}{subsubsection.4.5.2}%
-\contentsline {subsubsection}{\numberline {4.5.3}Cross-Experiment Comparison}{16}{subsubsection.4.5.3}%
-\contentsline {subsubsection}{\numberline {4.5.4}Key Findings}{16}{subsubsection.4.5.4}%
-\contentsline {paragraph}{Task Complexity Impact:}{16}{section*.5}%
-\contentsline {paragraph}{Guidance Scale Trade-offs:}{16}{section*.6}%
-\contentsline {paragraph}{Classifier-Free Guidance Effectiveness:}{16}{section*.7}%
-\contentsline {section}{\numberline {5}Discussion}{16}{section.5}%
-\contentsline {section}{\numberline {6}Conclusion}{16}{section.6}%
+\contentsline {section}{List of Tables}{2}{Doc-Start}%
+\contentsline {section}{\numberline {1}Introduction}{4}{section.1}%
+\contentsline {section}{\numberline {2}Related Work}{4}{section.2}%
+\contentsline {subsection}{\numberline {2.1}Generative Adversarial Networks for Image Generation}{4}{subsection.2.1}%
+\contentsline {subsection}{\numberline {2.2}Creative Adversarial Networks and Interactive Evolution}{4}{subsection.2.2}%
+\contentsline {subsection}{\numberline {2.3}Diffusion Models for Image Synthesis}{5}{subsection.2.3}%
+\contentsline {subsection}{\numberline {2.4}Text-Conditioned Image Generation}{5}{subsection.2.4}%
+\contentsline {subsection}{\numberline {2.5}Gaps and Contributions}{5}{subsection.2.5}%
+\contentsline {section}{\numberline {3}Experiments}{5}{section.3}%
+\contentsline {subsection}{\numberline {3.1}Experimental Setup}{5}{subsection.3.1}%
+\contentsline {subsubsection}{\numberline {3.1.1}Hardware Environment}{5}{subsubsection.3.1.1}%
+\contentsline {subsubsection}{\numberline {3.1.2}Software Environment}{5}{subsubsection.3.1.2}%
+\contentsline {subsubsection}{\numberline {3.1.3}Distributed Training Considerations}{6}{subsubsection.3.1.3}%
+\contentsline {subsection}{\numberline {3.2}MNIST Text-to-Image Generation with Classifier-Free Guidance}{6}{subsection.3.2}%
+\contentsline {subsubsection}{\numberline {3.2.1}Objective}{6}{subsubsection.3.2.1}%
+\contentsline {subsubsection}{\numberline {3.2.2}Model Architecture}{6}{subsubsection.3.2.2}%
+\contentsline {subsubsection}{\numberline {3.2.3}Dataset}{7}{subsubsection.3.2.3}%
+\contentsline {subsubsection}{\numberline {3.2.4}Training Configuration}{7}{subsubsection.3.2.4}%
+\contentsline {subsubsection}{\numberline {3.2.5}Inference and Classifier-Free Guidance}{7}{subsubsection.3.2.5}%
+\contentsline {subsubsection}{\numberline {3.2.6}Results}{8}{subsubsection.3.2.6}%
+\contentsline {subsubsection}{\numberline {3.2.7}Guidance-Scale ($w$) Ablation Study}{11}{subsubsection.3.2.7}%
+\contentsline {subsubsection}{\numberline {3.2.8}Visualization}{11}{subsubsection.3.2.8}%
+\contentsline {subsection}{\numberline {3.3}CIFAR-10 Text-to-Image Generation with Classifier-Free Guidance}{11}{subsection.3.3}%
+\contentsline {subsubsection}{\numberline {3.3.1}Objective}{11}{subsubsection.3.3.1}%
+\contentsline {subsubsection}{\numberline {3.3.2}Model Architecture}{11}{subsubsection.3.3.2}%
+\contentsline {subsubsection}{\numberline {3.3.3}Dataset}{13}{subsubsection.3.3.3}%
+\contentsline {subsubsection}{\numberline {3.3.4}Training Configuration}{13}{subsubsection.3.3.4}%
+\contentsline {subsubsection}{\numberline {3.3.5}Inference Configuration}{14}{subsubsection.3.3.5}%
+\contentsline {subsubsection}{\numberline {3.3.6}Evaluation Metrics}{14}{subsubsection.3.3.6}%
+\contentsline {subsubsection}{\numberline {3.3.7}Results}{14}{subsubsection.3.3.7}%
+\contentsline {subsubsection}{\numberline {3.3.8}Quality vs. Adherence Trade-off}{15}{subsubsection.3.3.8}%
+\contentsline {subsubsection}{\numberline {3.3.9}Per-Class Analysis}{15}{subsubsection.3.3.9}%
+\contentsline {subsubsection}{\numberline {3.3.10}Comparison with MNIST Experiment}{15}{subsubsection.3.3.10}%
+\contentsline {subsubsection}{\numberline {3.3.11}Discussion}{15}{subsubsection.3.3.11}%
+\contentsline {subsubsection}{\numberline {3.3.12}Limitations and Future Work}{17}{subsubsection.3.3.12}%
+\contentsline {section}{\numberline {4}Discussion}{17}{section.4}%
+\contentsline {section}{\numberline {5}Conclusion}{17}{section.5}%

@@ -31,6 +31,12 @@ EXPERIMENT_2_DATASET_DIR = EXPERIMENT_2_DIR / "dataset"
 EXPERIMENT_2_GENERATED_DIR = EXPERIMENT_2_DIR / "generated"
 EXPERIMENT_2_METRICS_DIR = EXPERIMENT_2_DIR / "metrics"
 
+# Experiment 3: WikiArt Text-to-Image with CFG
+EXPERIMENT_3_DIR = OUTPUTS_DIR / "experiment_3"
+EXPERIMENT_3_DATASET_DIR = EXPERIMENT_3_DIR / "dataset"
+EXPERIMENT_3_GENERATED_DIR = EXPERIMENT_3_DIR / "generated"
+EXPERIMENT_3_METRICS_DIR = EXPERIMENT_3_DIR / "metrics"
+
 # Research paper
 RESEARCH_PAPER_DIR = PROJECT_ROOT / "research-paper"
 FIGURES_DIR = RESEARCH_PAPER_DIR / "figures" / "experiments"
@@ -84,6 +90,30 @@ UNET_CIFAR10_CONFIG = {
     "cross_attention_dim": 512,  # CLIP embedding dimension
 }
 
+# UNet configuration for WikiArt (128×128 RGB images)
+UNET_WIKIART_CONFIG = {
+    "sample_size": 128,
+    "in_channels": 3,
+    "out_channels": 3,
+    "layers_per_block": 2,
+    "block_out_channels": (128, 256, 512, 512, 512),  # Larger capacity for complex art
+    "down_block_types": (
+        "DownBlock2D",
+        "DownBlock2D",
+        "CrossAttnDownBlock2D",
+        "CrossAttnDownBlock2D",
+        "DownBlock2D",
+    ),
+    "up_block_types": (
+        "UpBlock2D",
+        "CrossAttnUpBlock2D",
+        "CrossAttnUpBlock2D",
+        "UpBlock2D",
+        "UpBlock2D",
+    ),
+    "cross_attention_dim": 512,  # CLIP embedding dimension
+}
+
 # CLIP configuration
 CLIP_MODEL_NAME = "openai/clip-vit-base-patch32"
 TOKENIZER_MAX_LENGTH = 8
@@ -107,6 +137,16 @@ TRAIN_CIFAR10_CONFIG = {
     "num_epochs": 50,
     "learning_rate": 1e-4,
     "batch_size": 128,
+    "num_train_timesteps": 1000,
+    "beta_schedule": "squaredcos_cap_v2",
+    "checkpoint_every_n_epochs": 10,
+}
+
+# Training configuration for WikiArt (even smaller batch size for 128×128 images)
+TRAIN_WIKIART_CONFIG = {
+    "num_epochs": 100,
+    "learning_rate": 1e-5,
+    "batch_size": 16,
     "num_train_timesteps": 1000,
     "beta_schedule": "squaredcos_cap_v2",
     "checkpoint_every_n_epochs": 10,
@@ -180,6 +220,59 @@ EXPERIMENT_2_CONFIG = {
 
 
 # =============================================================================
+# Experiment 3: WikiArt Evaluation Configuration
+# =============================================================================
+
+# WikiArt art styles (27 major styles from WikiArt dataset)
+WIKIART_STYLES = [
+    "Abstract_Expressionism",
+    "Action_painting",
+    "Analytical_Cubism",
+    "Art_Nouveau_Modern",
+    "Baroque",
+    "Color_Field_Painting",
+    "Contemporary_Realism",
+    "Cubism",
+    "Early_Renaissance",
+    "Expressionism",
+    "Fauvism",
+    "High_Renaissance",
+    "Impressionism",
+    "Mannerism_Late_Renaissance",
+    "Minimalism",
+    "Naive_Art_Primitivism",
+    "New_Realism",
+    "Northern_Renaissance",
+    "Pointillism",
+    "Pop_Art",
+    "Post_Impressionism",
+    "Realism",
+    "Rococo",
+    "Romanticism",
+    "Symbolism",
+    "Synthetic_Cubism",
+    "Ukiyo_e",
+]
+
+EXPERIMENT_3_CONFIG = {
+    # Guidance scales to evaluate
+    "guidance_scales": [0, 5, 10, 15, 20, 30, 40, 50, 100],
+    
+    # Number of images per class per guidance scale
+    "images_per_class": 100,
+    
+    # All style classes
+    "classes": list(range(len(WIKIART_STYLES))),
+    
+    # Class names (styles)
+    "class_names": WIKIART_STYLES,
+    
+    # Prompt template
+    "prompt_template": "A painting in the style of {style_name}",
+}
+
+
+# =============================================================================
 # Classifier Configuration
 # =============================================================================
 
@@ -200,6 +293,9 @@ CLASSIFIER_CHECKPOINT_NAME = "mnist_classifier.pt"
 
 # Experiment 2: CIFAR-10
 UNET_CIFAR10_CHECKPOINT_PREFIX = "cifar10_unet_checkpoint_epoch_"
+
+# Experiment 3: WikiArt
+UNET_WIKIART_CHECKPOINT_PREFIX = "wikiart_unet_checkpoint_epoch_"
 
 
 # =============================================================================
@@ -307,3 +403,53 @@ def ensure_experiment_2_dirs():
         for class_idx in EXPERIMENT_2_CONFIG["classes"]:
             get_class_dir(guidance_dir, class_idx).mkdir(parents=True, exist_ok=True)
 
+
+# =============================================================================
+# Helper Functions - Experiment 3 (WikiArt)
+# =============================================================================
+
+def get_wikiart_unet_checkpoint_path(epoch: int) -> Path:
+    """Get path to WikiArt UNet checkpoint for a specific epoch."""
+    return CHECKPOINTS_DIR / f"{UNET_WIKIART_CHECKPOINT_PREFIX}{epoch}.pt"
+
+
+def get_latest_wikiart_unet_checkpoint() -> Path:
+    """Find the latest WikiArt UNet checkpoint by epoch number."""
+    checkpoints = list(CHECKPOINTS_DIR.glob(f"{UNET_WIKIART_CHECKPOINT_PREFIX}*.pt"))
+    if not checkpoints:
+        raise FileNotFoundError(f"No WikiArt UNet checkpoints found in {CHECKPOINTS_DIR}")
+    return max(checkpoints, key=lambda x: int(str(x).split("_")[-1].split(".")[0]))
+
+
+def get_wikiart_generated_images_dir(guidance_scale: int) -> Path:
+    """Get directory for generated WikiArt images at a specific guidance scale."""
+    return EXPERIMENT_3_GENERATED_DIR / f"guidance_{guidance_scale}"
+
+
+def get_style_dir(base_dir: Path, style_idx: int) -> Path:
+    """Get directory for a specific art style within a base directory."""
+    style_name = WIKIART_STYLES[style_idx]
+    return base_dir / f"style_{style_idx}_{style_name}"
+
+
+def ensure_experiment_3_dirs():
+    """Create all experiment 3 directories if they don't exist."""
+    dirs = [
+        EXPERIMENT_3_DIR,
+        EXPERIMENT_3_DATASET_DIR,
+        EXPERIMENT_3_GENERATED_DIR,
+        EXPERIMENT_3_METRICS_DIR,
+        FIGURES_DIR,
+    ]
+    for d in dirs:
+        d.mkdir(parents=True, exist_ok=True)
+    
+    # Create style subdirs for dataset
+    for style_idx in EXPERIMENT_3_CONFIG["classes"]:
+        get_style_dir(EXPERIMENT_3_DATASET_DIR, style_idx).mkdir(parents=True, exist_ok=True)
+    
+    # Create guidance scale subdirs with style subdirs
+    for guidance in EXPERIMENT_3_CONFIG["guidance_scales"]:
+        guidance_dir = get_wikiart_generated_images_dir(guidance)
+        for style_idx in EXPERIMENT_3_CONFIG["classes"]:
+            get_style_dir(guidance_dir, style_idx).mkdir(parents=True, exist_ok=True)
