@@ -78,7 +78,7 @@ The U-Net architecture is scaled up compared to the MNIST experiment to handle t
 
 \textbf{Training Pipeline per Batch:}
 \begin{enumerate}
-    \item Convert class labels to text captions using CLIP tokenizer
+    \item Convert class labels to text captions using the prompt template ``A photo of a \{class\_name\}'' (e.g., ``A photo of a cat''), then tokenize using the CLIP tokenizer
     \item Encode captions to semantic embeddings via frozen CLIP text encoder [batch, 77, 512]
     \item With 10\% probability, replace text embedding with null embedding (empty string) for CFG training
     \item Sample random timestep $t \sim \text{Uniform}(0, 1000)$ for each image
@@ -154,7 +154,7 @@ Notably, higher guidance scales also tend to introduce more visual artifacts, su
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.7\textwidth,keepaspectratio]{../figures/experiments/experiment_2/samples.png}
-    \caption[Representative CIFAR-10 samples at $w=5$]{Representative generated CIFAR-10 images using guidance scale $w=5$. The figure showcases a diverse set of samples across all classes, illustrating the model's ability to generate class-conditional images with moderate prompt adherence and visual quality.}
+    \caption[Representative CIFAR-10 samples at $w=5$]{Representative generated CIFAR-10 images using guidance scale $w=5$ (prompt template: ``A photo of a \{class\_name\}''). The figure showcases a diverse set of samples across all classes, illustrating the model's ability to generate class-conditional images with moderate prompt adherence and visual quality.}
     \label{fig:cifar10_samples_representative}
 \end{figure}
 
