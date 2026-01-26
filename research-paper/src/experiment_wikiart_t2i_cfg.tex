@@ -1,7 +1,7 @@
 \subsection{WikiArt Text-to-Image Generation with Classifier-Free Guidance}
 
 \subsubsection{Objective}
-This experiment extends the text-to-image diffusion framework to the WikiArt dataset, a large-scale collection of fine art paintings spanning 27 distinct artistic styles. Unlike MNIST (28$\times$28 grayscale digits) and CIFAR-10 (32$\times$32 natural images), WikiArt presents significantly greater challenges: higher resolution (128$\times$128), complex artistic compositions, and subtle stylistic variations that require the model to learn nuanced visual features. This experiment evaluates whether classifier-free guidance can effectively condition image generation on artistic style descriptions.
+This experiment extends the text-to-image diffusion framework to the WikiArt dataset, a large-scale collection of fine art paintings spanning 27 distinct artistic styles. Unlike MNIST (28$\times$28 grayscale digits) and CIFAR-10 (32$\times$32 natural images), WikiArt presents significantly greater challenges: higher resolution (128$\times$128), complex artistic compositions, and subtle stylistic variations that require the model to learn nuanced visual features. The primary objective is to demonstrate that our CLIP-conditioned diffusion approach with classifier-free guidance can scale to higher-resolution, fine-grained artistic generation tasks, matching or exceeding the capabilities demonstrated in related work \cite{yagil2023can}.
 
 \subsubsection{Dataset}
 

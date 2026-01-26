@@ -156,14 +156,16 @@ Figure~\ref{fig:mnist_loss} demonstrates the training convergence of the diffusi
 
 \textbf{Extended Training Results:}
 
-To evaluate the impact of extended training, we trained the model for 20 epochs and regenerated samples across all digit classes (see figure~\ref{fig:mnist_generation_20epochs}).
 
-\begin{figure}[htbp]
+% Place the extended training results figure here to ensure it appears within the MNIST experiment section
+\begin{figure}[h]
     \centering
     \includegraphics[width=0.7\textwidth,keepaspectratio]{../figures/experiments/mnist_generation_20epochs.png}
     \caption[Improved MNIST generation after extended training (20 epochs)]{Generation results after 20 epochs of training for all MNIST digit classes (0-9, rows) across different guidance scales ($w \in \{0, 1, 2, 3, 5, 10, 20\}$, columns). All images generated using 50 inference steps. Extended training produces sharper digits with improved text-prompt alignment and reduced artifacts, particularly noticeable at higher guidance scales.}
     \label{fig:mnist_generation_20epochs}
 \end{figure}
+
+To evaluate the impact of extended training, we trained the model for 20 epochs and regenerated samples across all digit classes (see Figure~\ref{fig:mnist_generation_20epochs}).
 
 \subsubsection{Key Findings}
 
