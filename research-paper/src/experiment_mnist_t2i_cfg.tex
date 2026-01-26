@@ -48,7 +48,7 @@ The key design choice in the U-Net architecture is to train directly in pixel sp
 
 \begin{figure}[htbp]
     \centering
-    \includegraphics[width=0.55\textwidth,keepaspectratio]{../figures/experiments/mnist_training_dataset.png}
+    \includegraphics[width=0.55\textwidth,keepaspectratio]{../figures/experiments/experiment_1/mnist_training_dataset.png}
     \caption[Sample handwritten digits (0-9) from MNIST training set]{Sample images from MNIST training dataset showing handwritten digits (0-9) with corresponding class labels.}
     \label{fig:mnist_training_dataset}
 \end{figure}
@@ -160,7 +160,7 @@ Figure~\ref{fig:mnist_loss} demonstrates the training convergence of the diffusi
 % Place the extended training results figure here to ensure it appears within the MNIST experiment section
 \begin{figure}[h]
     \centering
-    \includegraphics[width=0.7\textwidth,keepaspectratio]{../figures/experiments/mnist_generation_20epochs.png}
+    \includegraphics[width=0.7\textwidth,keepaspectratio]{../figures/experiments/experiment_1/mnist_generation_20epochs.png}
     \caption[Improved MNIST generation after extended training (20 epochs)]{Generation results after 20 epochs of training for all MNIST digit classes (0-9, rows) across different guidance scales ($w \in \{0, 1, 2, 3, 5, 10, 20\}$, columns). All images generated using 50 inference steps. Extended training produces sharper digits with improved text-prompt alignment and reduced artifacts, particularly noticeable at higher guidance scales.}
     \label{fig:mnist_generation_20epochs}
 \end{figure}
