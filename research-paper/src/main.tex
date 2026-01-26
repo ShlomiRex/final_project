@@ -2,13 +2,20 @@
 \usepackage{graphicx}
 \usepackage{amsmath}
 \usepackage{amsfonts}
-\usepackage{hyperref}
-\usepackage{cite}
+\usepackage{xcolor} % Required for color mixing (green!60!black syntax)
 \usepackage{enumitem}
 \usepackage{microtype}
 \usepackage{lmodern} % Use scalable fonts for compatibility with microtype
 \usepackage{tocloft} % Adjust ToC spacing
 \usepackage[a4paper, margin=0.75in, top=1in, bottom=1in]{geometry} % Adjust margins to increase text width
+\usepackage{booktabs} % Professional tables
+\usepackage{multicol} % Multi-column lists
+
+% Configure hyperref with green citations and black internal links (TOC)
+\usepackage[colorlinks=true, linkcolor=black, citecolor=green, urlcolor=blue]{hyperref}
+
+% Use natbib for square bracket citations
+\usepackage[square,numbers]{natbib}
 
 % Reduce spacing between paragraphs and list items
 \setlength{\parskip}{0.3em}
@@ -17,6 +24,12 @@
 % Reduce vertical spacing in ToC
 \setlength{\cftbeforesecskip}{0.0em} % Space before section entries
 \setlength{\cftbeforesubsecskip}{0.0em} % Space before subsection entries
+
+% Make TOC entries black while keeping hyperlinks green elsewhere
+\renewcommand{\cftsecfont}{\normalfont}
+\renewcommand{\cftsubsecfont}{\normalfont}
+\renewcommand{\cftsecpagefont}{\normalfont}
+\renewcommand{\cftsubsecpagefont}{\normalfont}
 
 \begin{document}
 

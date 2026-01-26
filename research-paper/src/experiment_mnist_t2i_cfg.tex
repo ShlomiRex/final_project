@@ -2,9 +2,9 @@
 
 \begin{figure}[htbp]
     \centering
-    \includegraphics[width=0.85\textwidth,keepaspectratio]{../figures/experiments/mnist_prompts.png}
-    \caption[Effect of guidance scale on MNIST digit generation quality]{Generated images for prompt "A handwritten digit 3" across different guidance scales. Higher guidance scales produce sharper, more confident outputs with stronger adherence to the text prompt.}
-    \label{fig:mnist_prompts}
+    \includegraphics[width=0.6\textwidth,keepaspectratio]{../figures/experiments/experiment_1/generated_cfg_with_prompt.png}
+    \caption[Generated images of digits 0-9 with CFG (w=5) and text prompts]{Generated images for all digits (0-9) using CFG with guidance scale $w=5$ and text prompts "A handwritten digit \{0-9\}". Demonstrates improved generation quality and text-image alignment compared to non-CFG baseline \ref{fig:mnist_no_cfg}.}
+    \label{fig:mnist_cfg_with_prompt}
 \end{figure}
 
 \subsubsection{Objective}
@@ -86,6 +86,8 @@ The key design choice in the U-Net architecture is to train directly in pixel sp
     \item Post-process: normalize output to [0, 255] for visualization
 \end{itemize}
 
+Figure~\ref{fig:mnist_no_cfg} shows generated images of digits 0-9 without CFG, demonstrating the baseline generation quality using only conditional text prompts.
+
 \textbf{Classifier-Free Guidance (CFG):}
 
 CFG enables stronger text conditioning by computing both conditional and unconditional predictions:
@@ -114,6 +116,22 @@ CFG enables stronger text conditioning by computing both conditional and uncondi
     \item \textbf{Effect:} Higher $w$ → stronger adherence to text prompt
 \end{enumerate}
 
+Figure~\ref{fig:mnist_no_cfg} shows generated images of digits 0-9 without CFG, demonstrating the baseline generation quality using only conditional text prompts. Figure~\ref{fig:mnist_cfg_empty_prompt} shows unconditional generation using CFG with empty prompts ($w=5$), producing varied outputs ranging from recognizable digits to ambiguous patterns due to the absence of text guidance.
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.6\textwidth,keepaspectratio]{../figures/experiments/experiment_1/generated_no_cfg_with_prompt.png}
+    \caption[Effect of guidance scale on MNIST digit generation quality]{Generated images of digits 0-9 without CFG. Digits 4 and 5 show some artifacts, indicating CFG enhances generation quality and text-image alignment (see Figure~\ref{fig:mnist_cfg_with_prompt}).}
+    \label{fig:mnist_no_cfg}
+\end{figure}
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.75\textwidth,keepaspectratio]{../figures/experiments/experiment_1/generated_cfg_empty_prompt.png}
+    \caption[Unconditional generation with CFG (w=5) and empty prompts]{Unconditional generation using CFG with guidance scale $w=5$ and empty prompts. Without text conditioning, the model produces varied outputs including recognizable and unrecognized digits.}
+    \label{fig:mnist_cfg_empty_prompt}
+\end{figure}
+
 \textbf{Inference Parameters:}
 \begin{itemize}
     \item \textbf{Scheduler:} DDPM with squared cosine schedule
@@ -122,7 +140,7 @@ CFG enables stronger text conditioning by computing both conditional and uncondi
     \item \textbf{Guidance scales tested:} $w \in \{0, 5, 10, 20, 50, 100\}$
 \end{itemize}
 
-\subsubsection{Results}
+\subsubsection{Results and Analysis}
 
 \textbf{Training Convergence:}
 
@@ -130,75 +148,35 @@ Figure~\ref{fig:mnist_loss} demonstrates the training convergence of the diffusi
 
 \begin{figure}[htbp]
     \centering
-    \includegraphics[width=0.6\textwidth,keepaspectratio]{../figures/experiments/mnist_loss_graph.png}
+    \includegraphics[width=0.6\textwidth,keepaspectratio]{../figures/experiments/experiment_1/mnist_loss_graph.png}
     \caption[Training loss convergence over 20 epochs]{Training loss curve of experiment 1.}
     \label{fig:mnist_loss}
 \end{figure}
 
-\textbf{Generation Quality Assessment:}
-
-Figure~\ref{fig:mnist_generation} presents a comprehensive evaluation of the model's generation capabilities across all digit classes and various guidance scales. This systematic comparison demonstrates how the guidance scale parameter $w$ influences both image quality and text-prompt adherence across different digit classes.
-
-\begin{figure}[htbp]
-    \centering
-    \includegraphics[width=0.70\textwidth,keepaspectratio]{../figures/experiments/mnist_generation.png}
-    \caption[MNIST generation for all digits (0-9) across guidance scales $w=0$ to $w=20$]{Comprehensive generation results for all MNIST digit classes (0-9, rows) across different guidance scales ($w \in \{0, 1, 2, 3, 5, 10, 20\}$, columns). Each row shows generations for the prompt "A handwritten digit X" where X corresponds to the digit class. All images generated using 50 inference steps.}
-    \label{fig:mnist_generation}
-\end{figure}
 
 \textbf{Extended Training Results:}
 
-To evaluate the impact of extended training, we trained the model for 20 epochs and regenerated samples across all digit classes. Figure~\ref{fig:mnist_generation_20epochs} shows the improved generation quality achieved with extended training, demonstrating better convergence and more consistent digit generation across all classes.
+To evaluate the impact of extended training, we trained the model for 20 epochs and regenerated samples across all digit classes (see figure~\ref{fig:mnist_generation_20epochs}).
 
 \begin{figure}[htbp]
     \centering
     \includegraphics[width=0.7\textwidth,keepaspectratio]{../figures/experiments/mnist_generation_20epochs.png}
-    \caption[Improved MNIST generation after extended training (20 epochs)]{Generation results after 20 epochs of training for all MNIST digit classes (0-9, rows) across different guidance scales ($w \in \{0, 1, 2, 3, 5, 10, 20\}$, columns). All images generated using 50 inference steps. Compared to Figure~\ref{fig:mnist_generation}, the extended training produces sharper digits with improved text-prompt alignment and reduced artifacts, particularly noticeable at higher guidance scales.}
+    \caption[Improved MNIST generation after extended training (20 epochs)]{Generation results after 20 epochs of training for all MNIST digit classes (0-9, rows) across different guidance scales ($w \in \{0, 1, 2, 3, 5, 10, 20\}$, columns). All images generated using 50 inference steps. Extended training produces sharper digits with improved text-prompt alignment and reduced artifacts, particularly noticeable at higher guidance scales.}
     \label{fig:mnist_generation_20epochs}
 \end{figure}
 
-\subsubsection{Guidance-Scale ($w$) Ablation Study}
+\subsubsection{Key Findings}
 
-We systematically evaluated the impact of guidance scale on generation quality:
+\textbf{Noise Characteristics with CFG:} Comparing Figures~\ref{fig:mnist_no_cfg} and~\ref{fig:mnist_cfg_with_prompt}, we observe that CFG with moderate guidance scale ($w=5$) produces slightly noisier outputs compared to the non-CFG baseline, despite using identical text prompts. This phenomenon can be attributed to several factors:
 
-\textbf{Tested Guidance Scales:}
 \begin{itemize}
-    \item $w = 0$: Unconditional generation (no text guidance)
-    \item $w = 5$: Weak guidance
-    \item $w = 10$: Moderate guidance
-    \item $w = 20$: Strong guidance
-    \item $w = 50$: Very strong guidance
-    \item $w = 100$: Maximum guidance
+    \item \textbf{Training-inference mismatch:} The model was trained without CFG, performing standard conditional generation. At inference time, CFG introduces a distribution shift by extrapolating beyond the learned conditional distribution using the formula: $\tilde{\boldsymbol{\epsilon}} = \boldsymbol{\epsilon}_\text{uncond} + w \cdot (\boldsymbol{\epsilon}_\text{cond} - \boldsymbol{\epsilon}_\text{uncond})$. This extrapolation can amplify noise present in the predictions.
+    
+    \item \textbf{Noise amplification:} The CFG mechanism amplifies the \emph{difference} between conditional and unconditional predictions. When $w > 1$, even small noise components in either prediction are magnified, leading to grainier textures in the output.
+    
+    \item \textbf{Sub-optimal guidance scale:} While $w=5$ improves text-prompt adherence, it may not be the optimal value for this model-dataset combination. The slight noise increase suggests a trade-off between prompt alignment and output smoothness.
+    
+    \item \textbf{Iterative error accumulation:} Over 50 denoising steps, the guided predictions may accumulate small errors differently than standard sampling, particularly when operating outside the training distribution.
 \end{itemize}
 
-\textbf{Evaluation Protocol:}
-\begin{enumerate}
-    \item Generate images with fixed prompt: "A handwritten digit \{0-9\}"
-    \item Use fixed random seed (422) set within the generation function, ensuring consistent initial noise for each guidance scale comparison
-    \item Apply 50 denoising steps per image
-    \item Qualitatively assess:
-    \begin{itemize}
-        \item Image clarity and sharpness
-        \item Adherence to text prompt (correct digit class)
-        \item Presence of artifacts or distortions
-        \item Overall sample quality
-    \end{itemize}
-\end{enumerate}
-
-\textbf{Expected Results:}
-\begin{itemize}
-    \item $w = 0$: Random digit generation (unconditional)
-    \item $w = 5$-$10$: Balanced quality and prompt following
-    \item $w = 20$-$50$: Strong prompt adherence with sharp outputs
-    \item $w = 100$: Potential over-saturation and artifacts
-\end{itemize}
-
-\subsubsection{Visualization}
-
-Generated images displayed using matplotlib with:
-\begin{itemize}
-    \item Grayscale colormap
-    \item Grid layout for guidance scale comparison (1 row $\times$ 6 columns)
-    \item Individual subplot titles showing guidance scale values
-    \item Tight layout to prevent overlap
-\end{itemize}
+This observation highlights an important consideration when applying CFG: the guidance scale must be carefully tuned to balance text-prompt adherence against output quality. For production systems, this suggests either: (1) training explicitly with CFG to minimize the training-inference gap, or (2) systematic hyperparameter search to identify the optimal guidance scale that maximizes both prompt alignment and visual quality.

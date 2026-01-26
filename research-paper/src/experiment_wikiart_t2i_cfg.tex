@@ -1,0 +1,221 @@
+\subsection{WikiArt Text-to-Image Generation with Classifier-Free Guidance}
+
+\subsubsection{Objective}
+This experiment extends the text-to-image diffusion framework to the WikiArt dataset, a large-scale collection of fine art paintings spanning 27 distinct artistic styles. Unlike MNIST (28$\times$28 grayscale digits) and CIFAR-10 (32$\times$32 natural images), WikiArt presents significantly greater challenges: higher resolution (128$\times$128), complex artistic compositions, and subtle stylistic variations that require the model to learn nuanced visual features. This experiment evaluates whether classifier-free guidance can effectively condition image generation on artistic style descriptions.
+
+\subsubsection{Dataset}
+
+\textbf{WikiArt Dataset (HuggingFace: huggan/wikiart):}
+\begin{itemize}
+    \item \textbf{Training images:} $\sim$81,000 paintings
+    \item \textbf{Resolution:} Variable (resized to 128$\times$128 for training)
+    \item \textbf{Dataset size on disk:} $\sim$32 GB
+    \item \textbf{Storage format:} 72 Apache Parquet files, each containing $\sim$1,100 samples
+    \item \textbf{Classes:} 27 art styles:
+    \begin{multicols}{3}
+    \begin{enumerate}
+        \setcounter{enumi}{-1}
+        \item Abstract Expressionism
+        \item Action Painting
+        \item Analytical Cubism
+        \item Art Nouveau Modern
+        \item Baroque
+        \item Color Field Painting
+        \item Contemporary Realism
+        \item Cubism
+        \item Early Renaissance
+        \item Expressionism
+        \item Fauvism
+        \item High Renaissance
+        \item Impressionism
+        \item Mannerism Late Renaissance
+        \item Minimalism
+        \item Naive Art Primitivism
+        \item New Realism
+        \item Northern Renaissance
+        \item Pointillism
+        \item Pop Art
+        \item Post Impressionism
+        \item Realism
+        \item Rococo
+        \item Romanticism
+        \item Symbolism
+        \item Synthetic Cubism
+        \item Ukiyo-e
+    \end{enumerate}
+    \end{multicols}
+    \item \textbf{Text captions:} Automatically generated as ``A painting in the style of \{style\_name\}''
+    \item \textbf{Preprocessing:} Resized to 128$\times$128, normalized to [-1, 1] range
+\end{itemize}
+
+\subsubsection{Dataset Loading Challenge and Solution}
+\label{sec:wikiart-dataloader}
+
+A significant engineering challenge emerged when loading the WikiArt dataset for training. The standard approach of using PyTorch's \texttt{DataLoader} with \texttt{shuffle=True} proved impractical for this large-scale dataset stored across multiple Parquet files.
+
+\textbf{The Problem:}
+
+The WikiArt dataset is stored as 72 Parquet files:
+\begin{verbatim}
+train-00000-of-00072.parquet
+train-00001-of-00072.parquet
+...
+train-00071-of-00072.parquet
+\end{verbatim}
+
+Each file is approximately 400--450 MB and contains $\sim$1,100 image samples with embedded image bytes. When using a standard PyTorch \texttt{Dataset} with random shuffling, the \texttt{DataLoader} requests samples by random global indices. This causes severe performance degradation:
+
+\begin{enumerate}
+    \item \textbf{Random access pattern:} A batch of 16 images might require loading 16 different Parquet files
+    \item \textbf{Repeated I/O:} Each file (400 MB) must be read from disk for every sample
+    \item \textbf{Result:} Batch loading times of 10--15 seconds (instead of $<$1 second)
+\end{enumerate}
+
+Initial attempts to mitigate this with LRU caching of loaded files led to memory exhaustion when combined with multi-process \texttt{DataLoader} workers, as each worker maintains its own cache.
+
+\textbf{The Solution: File-Sequential Iterable Dataset}
+
+We implemented a custom \texttt{IterableDataset} that processes files sequentially:
+
+\begin{enumerate}
+    \item \textbf{File-level iteration:} Load one Parquet file entirely into memory ($\sim$400 MB)
+    \item \textbf{Per-file shuffling:} Shuffle the $\sim$1,100 samples within the loaded file
+    \item \textbf{Yield all samples:} Return all samples from this file before moving to the next
+    \item \textbf{File order shuffling:} Randomize file order at the start of each epoch
+    \item \textbf{Memory release:} Free memory after exhausting each file
+\end{enumerate}
+
+\begin{figure}[htbp]
+\centering
+\small
+\begin{verbatim}
+Epoch: Shuffled File Order
+      ↓
+    File 0      File 1      File 2     ...    File 71
+    (1100)      (1100)      (1100)           (1100)
+      ↓           ↓           ↓                  ↓
+  Shuffle     Shuffle     Shuffle          Shuffle
+   samples     samples     samples          samples
+      ↓           ↓           ↓                  ↓
+   Yield all   Yield all   Yield all       Yield all
+   samples     samples     samples         samples
+      ↓           ↓           ↓                  ↓
+  Release      Release      Release        Release
+  memory       memory       memory         memory
+\end{verbatim}
+\caption{File-sequential loading strategy for WikiArt dataset. Each epoch processes files in shuffled order, with per-file sample shuffling and memory release after processing.}
+\label{fig:wikiart-loading}
+\end{figure}
+
+\textbf{Performance Comparison:}
+
+\begin{table}[htbp]
+\centering
+\begin{tabular}{lcc}
+\toprule
+\textbf{Loading Strategy} & \textbf{Batch Time} & \textbf{Memory Usage} \\
+\midrule
+Random access (naive) & 10--15 sec & Variable (cache misses) \\
+LRU cache (5 files) & 3--5 sec & $\sim$2 GB \\
+File-sequential (ours) & 0.1--0.5 sec & $\sim$400 MB \\
+\bottomrule
+\end{tabular}
+\caption{Batch loading performance for WikiArt dataset (batch size 16).}
+\label{tab:wikiart-loading-perf}
+\end{table}
+
+\textbf{Trade-off Analysis:}
+
+The file-sequential approach sacrifices global shuffling for practical training speed. Instead of shuffling across all 81,000 samples, shuffling occurs within groups of $\sim$1,100 samples (one file). This trade-off is acceptable because:
+
+\begin{itemize}
+    \item File order is randomized each epoch, providing inter-epoch diversity
+    \item Similar approaches are used in production systems (WebDataset, TensorFlow Datasets)
+    \item Training convergence was not noticeably affected in practice
+    \item The 20--100$\times$ speedup enables practical iteration during development
+\end{itemize}
+
+\subsubsection{Model Architecture}
+
+\textbf{Text Encoder (Frozen):}
+\begin{itemize}
+    \item \textbf{Model:} CLIP (openai/clip-vit-base-patch32)
+    \item \textbf{Embedding dimension:} 512
+    \item \textbf{Tokenizer max length:} 77 tokens
+    \item \textbf{Training:} Weights are frozen
+\end{itemize}
+
+\textbf{Denoising Network (U-Net):}
+
+The U-Net architecture is scaled up significantly compared to previous experiments to handle the increased resolution and complexity of artistic images.
+
+\begin{itemize}
+    \item \textbf{Architecture:} Custom UNet2DConditionModel for WikiArt
+    \item \textbf{Input/Output:} 3 channels (RGB), 128$\times$128 pixels
+    \item \textbf{Block channels:} (128, 256, 512, 512, 1024) --- 5 resolution levels for 128$\times$128
+    \item \textbf{Layers per block:} 2
+    \item \textbf{Down blocks:} DownBlock2D $\rightarrow$ CrossAttnDownBlock2D $\rightarrow$ CrossAttnDownBlock2D $\rightarrow$ CrossAttnDownBlock2D $\rightarrow$ DownBlock2D
+    \item \textbf{Up blocks:} UpBlock2D $\rightarrow$ CrossAttnUpBlock2D $\rightarrow$ CrossAttnUpBlock2D $\rightarrow$ CrossAttnUpBlock2D $\rightarrow$ UpBlock2D
+    \item \textbf{Cross-attention dimension:} 512 (matches CLIP embedding size)
+    \item \textbf{Attention head dimension:} 32
+    \item \textbf{Total trainable parameters:} $\sim$150 million
+\end{itemize}
+
+\subsubsection{Training Configuration}
+
+\begin{itemize}
+    \item \textbf{Batch size:} 16 (constrained by 128$\times$128 resolution and model size)
+    \item \textbf{Learning rate:} $10^{-5}$ (smaller than CIFAR-10 due to larger model)
+    \item \textbf{Optimizer:} AdamW with weight decay 0.01
+    \item \textbf{Epochs:} 100
+    \item \textbf{Noise scheduler:} DDPM with linear beta schedule
+    \item \textbf{Beta range:} $\beta_{\text{start}} = 0.0001$, $\beta_{\text{end}} = 0.02$
+    \item \textbf{Timesteps:} 1,000
+    \item \textbf{Loss function:} Mean Squared Error (MSE) between predicted and actual noise
+    \item \textbf{Unconditional dropout:} 10\% (for classifier-free guidance training)
+    \item \textbf{Checkpoint frequency:} Every 10 epochs
+\end{itemize}
+
+\subsubsection{Training Pipeline}
+
+\begin{enumerate}
+    \item Load batch of images and style labels from file-sequential iterator
+    \item Convert style labels to text captions (e.g., ``A painting in the style of Impressionism'')
+    \item Encode captions using frozen CLIP text encoder
+    \item Apply 10\% unconditional dropout (replace embeddings with null embedding)
+    \item Sample random noise and timesteps
+    \item Add noise to images according to DDPM schedule
+    \item Predict noise using U-Net conditioned on text embeddings
+    \item Compute MSE loss and update weights
+\end{enumerate}
+
+\subsubsection{Comparison Across Experiments}
+
+Table~\ref{tab:experiment-comparison} summarizes the key differences across all three experiments.
+
+\begin{table}[htbp]
+\centering
+\small
+\begin{tabular}{lccc}
+\toprule
+\textbf{Aspect} & \textbf{MNIST} & \textbf{CIFAR-10} & \textbf{WikiArt} \\
+\midrule
+Resolution & 28$\times$28 & 32$\times$32 & 128$\times$128 \\
+Channels & 1 (grayscale) & 3 (RGB) & 3 (RGB) \\
+Classes & 10 digits & 10 objects & 27 styles \\
+Training samples & 60,000 & 50,000 & $\sim$81,000 \\
+Dataset size & $\sim$50 MB & $\sim$170 MB & $\sim$32 GB \\
+U-Net blocks & 4 & 4 & 5 \\
+Parameters & $\sim$25M & $\sim$45M & $\sim$150M \\
+Batch size & 256 & 128 & 16 \\
+Learning rate & $10^{-4}$ & $10^{-4}$ & $10^{-5}$ \\
+Epochs & 20 & 50 & 100 \\
+\bottomrule
+\end{tabular}
+\caption{Comparison of experimental configurations across MNIST, CIFAR-10, and WikiArt datasets.}
+\label{tab:experiment-comparison}
+\end{table}
+
+% Results section to be added after training completes
+% \subsubsection{Results}
+% TODO: Add training curves, generated samples, and FID scores after training

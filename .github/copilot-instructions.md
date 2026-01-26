@@ -32,6 +32,44 @@ checkpoint_dir = "../checkpoints"
 checkpoint_dir = "../../checkpoints"
 ```
 
+### Dataset and Cache Management (HPC Environment)
+
+**CRITICAL: NEVER download datasets or cache files to `/home/doshlom4/` unless specifically in `/home/doshlom4/work/` subdirectory.**
+
+- Home directory (`/home/doshlom4/`) has limited quota and resources on HPC
+- Work directory (`/home/doshlom4/work/`) has proper storage allocation
+- **ALWAYS use:** `/home/doshlom4/work/final_project/dataset_cache` for all dataset downloads
+
+#### HuggingFace Datasets
+
+```python
+# ✅ CORRECT - Use project dataset_cache
+from datasets import load_dataset
+wikiart = load_dataset(
+    "huggan/wikiart",
+    split="train",
+    cache_dir=str(PROJECT_ROOT / "dataset_cache")
+)
+
+# ❌ WRONG - Never let HuggingFace use default cache
+wikiart = load_dataset("huggan/wikiart")  # Uses ~/.cache/huggingface
+
+# ❌ WRONG - Never cache outside /work
+wikiart = load_dataset("huggan/wikiart", cache_dir="/home/doshlom4/.cache")
+```
+
+#### PyTorch/Torchvision Datasets
+
+```python
+# ✅ CORRECT - Use project dataset_cache
+from torchvision.datasets import MNIST, CIFAR10
+dataset = MNIST(root=str(PROJECT_ROOT / "dataset_cache"), download=True)
+dataset = CIFAR10(root=str(PROJECT_ROOT / "dataset_cache"), download=True)
+
+# ❌ WRONG - Never use home directory
+dataset = MNIST(root="~/datasets")
+```
+
 #### For Python Scripts
 
 Use absolute paths or calculate the project root dynamically:
