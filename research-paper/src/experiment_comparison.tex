@@ -1,0 +1,34 @@
+% experiment_comparison.tex
+% Section for cross-experiment comparison and key findings
+
+\section{Comparative Analysis and Key Findings}
+\label{sec:comparative_analysis}
+
+This section summarizes and compares the results and key insights across all experiments conducted in this work, including MNIST, CIFAR-10, and future datasets.
+
+\subsection{Comparison of MNIST and CIFAR-10 Experiments}
+
+\begin{table}[h]
+    \centering
+    \caption{Comparison of MNIST and CIFAR-10 Experiments}
+    \label{tab:mnist_cifar10_comparison}
+    \begin{tabular}{|l|c|c|}
+        \hline
+        \textbf{Aspect} & \textbf{MNIST} & \textbf{CIFAR-10} \\
+        \hline
+        Image size & 28$\times$28 & 32$\times$32 \\
+        \hline
+        Channels & 1 (grayscale) & 3 (RGB) \\
+        \hline
+        Model parameters & $\sim$3.1M & $\sim$45M \\
+        \hline
+        Training epochs & 20 & 50 \\
+        \hline
+        Optimal guidance & $w \in [10, 20]$ & $w = 2$ (quality) / $w = 10$ (adherence) \\
+        \hline
+        Generation quality & High (simple domain) & Moderate (complex domain) \\
+        \hline
+    \end{tabular}
+\end{table}
+
+% Add further cross-experiment discussion and findings here as more experiments are added.

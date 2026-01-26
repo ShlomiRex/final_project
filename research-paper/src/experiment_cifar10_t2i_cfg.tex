@@ -1,12 +1,5 @@
 \subsection{CIFAR-10 Text-to-Image Generation with Classifier-Free Guidance}
 
-\begin{figure}[htbp]
-    \centering
-    \includegraphics[width=0.7\textwidth,height=0.85\textheight,keepaspectratio]{../figures/experiments/samples_w10.png}
-    \caption[Generated CIFAR-10 images for all 10 classes at guidance scale $w=10$]{Generated CIFAR-10 images for all 10 classes using guidance scale $w=10$. Each row shows 4 samples for a class: airplane, automobile, bird, cat, deer, dog, frog, horse, ship, and truck. The model demonstrates the ability to generate diverse natural images conditioned on text prompts.}
-    \label{fig:cifar10_samples}
-\end{figure}
-
 \subsubsection{Objective}
 Building upon the success of the MNIST experiment, this experiment extends the text-to-image diffusion framework to CIFAR-10, a more challenging dataset with natural color images. CIFAR-10 contains 32$\times$32 RGB images across 10 object classes, presenting significantly greater complexity than grayscale handwritten digits. This experiment evaluates whether the same architectural principles and classifier-free guidance approach can scale to more realistic image generation tasks.
 
@@ -38,14 +31,21 @@ The U-Net architecture is scaled up compared to the MNIST experiment to handle t
 
 \subsubsection{Dataset}
 
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.7\textwidth,keepaspectratio]{../figures/experiments/experiment_2/training_samples.png}
+    \caption[Example CIFAR-10 training images]{Example images from the CIFAR-10 training set.}
+    \label{fig:cifar10_training_samples}
+\end{figure}
+
 \textbf{CIFAR-10 Dataset:}
 \begin{itemize}
     \item \textbf{Training images:} 50,000
     \item \textbf{Test images:} 10,000
     \item \textbf{Resolution:} 32$\times$32 pixels, RGB color
     \item \textbf{Classes:} 10 object categories:
+    \begin{multicols}{3}
     \begin{enumerate}
-        \setcounter{enumi}{-1}
         \item airplane
         \item automobile
         \item bird
@@ -57,6 +57,7 @@ The U-Net architecture is scaled up compared to the MNIST experiment to handle t
         \item ship
         \item truck
     \end{enumerate}
+    \end{multicols}
     \item \textbf{Text captions:} Automatically generated as ``A photo of a \{class\_name\}'' (e.g., ``A photo of a cat'')
     \item \textbf{Preprocessing:} Normalized to [-1, 1] range for diffusion training
 \end{itemize}
@@ -109,17 +110,49 @@ Two complementary metrics were used to evaluate generation quality:
 
 \textbf{2. Classification Accuracy:}
 \begin{itemize}
-    \item Measures prompt adherence using a pre-trained ResNet-18 classifier
+    \item Measures prompt adherence using a ResNet-18 classifier adapted from ImageNet (not fine-tuned on CIFAR-10). The classifier's first convolution and final layer were modified for 32$\times$32 images and 10 classes, but no additional training was performed. Thus, the absolute accuracy values are underestimated, but relative differences across guidance scales remain meaningful.
     \item Generated images classified and compared to intended class from prompt
     \item Higher accuracy indicates better text-image alignment
     \item 100 images per class (1,000 total) evaluated per guidance scale
 \end{itemize}
 
+
 \subsubsection{Results}
+
+To qualitatively assess the effect of guidance scale on prompt adherence and sample diversity, Figures~\ref{fig:cifar10_samples_w0}--\ref{fig:cifar10_samples_w10} show $10\times10$ grids of generated CIFAR-10 images for all 10 classes at guidance scales $w=0,2,5,10$. Each row corresponds to a class, and each column shows a different generated sample. As the guidance scale increases, the images become more class-specific and less diverse. The unconditional case ($w=0$) produces class-agnostic images, while higher guidance scales yield more recognizable class features but reduced variation within each class.
+Notably, higher guidance scales also tend to introduce more visual artifacts, such as unnaturally bright images and overconfident or exaggerated features, reflecting the model's increased emphasis on matching the prompt at the expense of image realism.
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.95\textwidth,keepaspectratio]{../figures/experiments/experiment_2/samples_w_0.png}
+    \caption[Generated CIFAR-10 images for all 10 classes at guidance scale $w=0$]{Generated CIFAR-10 images for all 10 classes ($10\times10$ grid) using guidance scale $w=0$ (unconditional). Each row shows 10 samples for a class.}
+    \label{fig:cifar10_samples_w0}
+\end{figure}
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.95\textwidth,keepaspectratio]{../figures/experiments/experiment_2/samples_w_2.png}
+    \caption[Generated CIFAR-10 images for all 10 classes at guidance scale $w=2$]{Generated CIFAR-10 images for all 10 classes ($10\times10$ grid) using guidance scale $w=2$. Each row shows 10 samples for a class.}
+    \label{fig:cifar10_samples_w2}
+\end{figure}
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.95\textwidth,keepaspectratio]{../figures/experiments/experiment_2/samples_w_5.png}
+    \caption[Generated CIFAR-10 images for all 10 classes at guidance scale $w=5$]{Generated CIFAR-10 images for all 10 classes ($10\times10$ grid) using guidance scale $w=5$. Each row shows 10 samples for a class.}
+    \label{fig:cifar10_samples_w5}
+\end{figure}
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.95\textwidth,keepaspectratio]{../figures/experiments/experiment_2/samples_w_10.png}
+    \caption[Generated CIFAR-10 images for all 10 classes at guidance scale $w=10$]{Generated CIFAR-10 images for all 10 classes ($10\times10$ grid) using guidance scale $w=10$. Each row shows 10 samples for a class.}
+    \label{fig:cifar10_samples_w10}
+\end{figure}
 
 \begin{table}[h]
     \centering
-    \caption{CIFAR-10 Generation Metrics Across Guidance Scales}
+    \caption{CIFAR-10 Generation Metrics Across Guidance Scales. Accuracy$^\ast$ measures prompt adherence.}
     \label{tab:cifar10_metrics}
     \begin{tabular}{|c|c|c|}
         \hline
@@ -134,105 +167,7 @@ Two complementary metrics were used to evaluate generation quality:
         10 & 77.19 & \textbf{16.50} \\
         \hline
     \end{tabular}
+    
+    \vspace{0.5em}
+    \footnotesize{$^\ast$Accuracy is measured using a ResNet-18 classifier adapted from ImageNet but not fine-tuned on CIFAR-10. The classifier's first convolution and final layer were modified for 32$\times$32 images and 10 classes, but no additional training was performed. Thus, the absolute accuracy values are underestimated, but the relative trend shows that higher guidance scales yield better prompt adherence, as expected.}
 \end{table}
-
-Figure~\ref{fig:cifar10_fid_accuracy} shows the relationship between guidance scale and both metrics, revealing the quality-adherence trade-off characteristic of classifier-free guidance.
-
-\begin{figure}[htbp]
-    \centering
-    \includegraphics[width=0.85\textwidth,keepaspectratio]{../figures/experiments/fid_and_accuracy.png}
-    \caption[CIFAR-10 FID score and classification accuracy vs. guidance scale]{FID Score (left) and Classification Accuracy (right) vs. Guidance Scale for CIFAR-10 generation. Lower FID indicates better image quality, while higher accuracy indicates better prompt adherence. The optimal guidance scale $w=2$ achieves the best FID (56.28), while $w=10$ achieves the highest accuracy (16.50\%).}
-    \label{fig:cifar10_fid_accuracy}
-\end{figure}
-
-\textbf{Key Observations:}
-
-\begin{itemize}
-    \item \textbf{$w=0$ (Unconditional):} FID of 77.05 with near-random accuracy (9.1\%), confirming that without guidance, the model produces class-agnostic samples.
-    
-    \item \textbf{$w=2$ (Weak Guidance):} Achieves the \textbf{best FID score of 56.28}, indicating this guidance level produces the most realistic-looking images while maintaining reasonable diversity.
-    
-    \item \textbf{$w=5$ (Moderate Guidance):} Slight increase in FID to 63.13, suggesting some loss of image quality as the model prioritizes text conditioning.
-    
-    \item \textbf{$w=10$ (Strong Guidance):} \textbf{Highest accuracy of 16.50\%} but FID degrades to 77.19, demonstrating the classic quality-adherence trade-off.
-\end{itemize}
-
-\subsubsection{Quality vs. Adherence Trade-off}
-
-Figure~\ref{fig:cifar10_tradeoff} visualizes the fundamental trade-off between image quality (FID) and text-prompt adherence (accuracy) across guidance scales.
-
-\begin{figure}[htbp]
-    \centering
-    \includegraphics[width=0.65\textwidth,keepaspectratio]{../figures/experiments/quality_vs_adherence.png}
-    \caption[Trade-off between image quality (FID) and text adherence (accuracy)]{Quality vs. Prompt Adherence trade-off curve for CIFAR-10 generation. Each point represents a different guidance scale. The x-axis shows FID (inverted, so rightward is better quality), and the y-axis shows classification accuracy. The curve illustrates that increasing guidance improves prompt adherence at the cost of image quality.}
-    \label{fig:cifar10_tradeoff}
-\end{figure}
-
-\subsubsection{Per-Class Analysis}
-
-Figure~\ref{fig:cifar10_confusion} shows the confusion matrices for all guidance scales, revealing which classes are most challenging for the model to generate correctly.
-
-\begin{figure}[htbp]
-    \centering
-    \includegraphics[width=0.95\textwidth,keepaspectratio]{../figures/experiments/confusion_matrices.png}
-    \caption[Per-class generation accuracy shown via confusion matrices for all guidance scales]{Normalized confusion matrices for CIFAR-10 generation across all guidance scales ($w \in \{0, 2, 5, 10\}$). Rows represent the intended class from the text prompt, columns represent the classifier's prediction. Diagonal values indicate correct generation. The matrices reveal that some classes (e.g., truck, ship) are easier to generate correctly than others (e.g., cat, dog).}
-    \label{fig:cifar10_confusion}
-\end{figure}
-
-\textbf{Class-wise Performance Insights:}
-\begin{itemize}
-    \item \textbf{Vehicle classes} (airplane, automobile, ship, truck): Generally show higher accuracy, possibly due to more distinct shapes and less intra-class variation.
-    \item \textbf{Animal classes} (cat, dog, bird, deer, horse, frog): Show more confusion between similar animals, reflecting the challenge of generating fine-grained visual distinctions.
-    \item \textbf{Common misclassifications}: Cat$\leftrightarrow$Dog confusion is prominent, as is Bird$\leftrightarrow$Airplane, likely due to similar silhouettes.
-\end{itemize}
-
-\subsubsection{Comparison with MNIST Experiment}
-
-\begin{table}[h]
-    \centering
-    \caption{Comparison of MNIST and CIFAR-10 Experiments}
-    \label{tab:mnist_cifar10_comparison}
-    \begin{tabular}{|l|c|c|}
-        \hline
-        \textbf{Aspect} & \textbf{MNIST} & \textbf{CIFAR-10} \\
-        \hline
-        Image size & 28$\times$28 & 32$\times$32 \\
-        \hline
-        Channels & 1 (grayscale) & 3 (RGB) \\
-        \hline
-        Model parameters & $\sim$3.1M & $\sim$45M \\
-        \hline
-        Training epochs & 20 & 50 \\
-        \hline
-        Optimal guidance & $w \in [10, 20]$ & $w = 2$ (quality) / $w = 10$ (adherence) \\
-        \hline
-        Generation quality & High (simple domain) & Moderate (complex domain) \\
-        \hline
-    \end{tabular}
-\end{table}
-
-\subsubsection{Discussion}
-
-The CIFAR-10 experiment demonstrates that the text-conditioned diffusion framework can scale to more complex natural image domains, though with notable challenges:
-
-\begin{enumerate}
-    \item \textbf{Increased Complexity:} Natural images require significantly more model capacity (45M vs 3.1M parameters) and longer training (50 vs 20 epochs).
-    
-    \item \textbf{Quality-Adherence Trade-off:} Unlike MNIST where higher guidance consistently improved results, CIFAR-10 shows a clear trade-off where the optimal guidance scale depends on whether quality (FID) or adherence (accuracy) is prioritized.
-    
-    \item \textbf{Classification Limitations:} The moderate accuracy values (9-17\%) are partially attributable to the pre-trained classifier not being fine-tuned on CIFAR-10, and the inherent difficulty of 32$\times$32 classification.
-    
-    \item \textbf{FID Scores:} FID values around 56-77 indicate reasonable but not state-of-the-art image quality. For comparison, leading CIFAR-10 generative models achieve FID scores below 10.
-\end{enumerate}
-
-\subsubsection{Limitations and Future Work}
-
-\begin{itemize}
-    \item \textbf{Resolution:} The 32$\times$32 resolution limits the visual detail achievable. Future work could explore upscaling or higher-resolution training.
-    
-    \item \textbf{Classifier Fine-tuning:} A CIFAR-10-specific classifier fine-tuned on the training set would provide more reliable accuracy metrics.
-    
-    \item \textbf{Extended Training:} Additional training epochs or larger batch sizes may improve both FID and accuracy.
-    
-    \item \textbf{Advanced Architectures:} Incorporating techniques from more recent diffusion models (e.g., attention mechanisms, larger models) could improve generation quality.
-\end{itemize}

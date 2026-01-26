@@ -24,21 +24,18 @@
 \contentsline {subsubsection}{\numberline {3.3.2}Model Architecture}{10}{subsubsection.3.3.2}%
 \contentsline {subsubsection}{\numberline {3.3.3}Dataset}{11}{subsubsection.3.3.3}%
 \contentsline {subsubsection}{\numberline {3.3.4}Training Configuration}{11}{subsubsection.3.3.4}%
-\contentsline {subsubsection}{\numberline {3.3.5}Inference Configuration}{11}{subsubsection.3.3.5}%
-\contentsline {subsubsection}{\numberline {3.3.6}Evaluation Metrics}{11}{subsubsection.3.3.6}%
+\contentsline {subsubsection}{\numberline {3.3.5}Inference Configuration}{12}{subsubsection.3.3.5}%
+\contentsline {subsubsection}{\numberline {3.3.6}Evaluation Metrics}{12}{subsubsection.3.3.6}%
 \contentsline {subsubsection}{\numberline {3.3.7}Results}{12}{subsubsection.3.3.7}%
-\contentsline {subsubsection}{\numberline {3.3.8}Quality vs. Adherence Trade-off}{12}{subsubsection.3.3.8}%
-\contentsline {subsubsection}{\numberline {3.3.9}Per-Class Analysis}{12}{subsubsection.3.3.9}%
-\contentsline {subsubsection}{\numberline {3.3.10}Comparison with MNIST Experiment}{12}{subsubsection.3.3.10}%
-\contentsline {subsubsection}{\numberline {3.3.11}Discussion}{12}{subsubsection.3.3.11}%
-\contentsline {subsubsection}{\numberline {3.3.12}Limitations and Future Work}{13}{subsubsection.3.3.12}%
-\contentsline {subsection}{\numberline {3.4}WikiArt Text-to-Image Generation with Classifier-Free Guidance}{13}{subsection.3.4}%
-\contentsline {subsubsection}{\numberline {3.4.1}Objective}{13}{subsubsection.3.4.1}%
+\contentsline {subsection}{\numberline {3.4}WikiArt Text-to-Image Generation with Classifier-Free Guidance}{12}{subsection.3.4}%
+\contentsline {subsubsection}{\numberline {3.4.1}Objective}{12}{subsubsection.3.4.1}%
 \contentsline {subsubsection}{\numberline {3.4.2}Dataset}{13}{subsubsection.3.4.2}%
-\contentsline {subsubsection}{\numberline {3.4.3}Dataset Loading Challenge and Solution}{14}{subsubsection.3.4.3}%
-\contentsline {subsubsection}{\numberline {3.4.4}Model Architecture}{15}{subsubsection.3.4.4}%
-\contentsline {subsubsection}{\numberline {3.4.5}Training Configuration}{15}{subsubsection.3.4.5}%
+\contentsline {subsubsection}{\numberline {3.4.3}Dataset Loading Challenge and Solution}{13}{subsubsection.3.4.3}%
+\contentsline {subsubsection}{\numberline {3.4.4}Model Architecture}{14}{subsubsection.3.4.4}%
+\contentsline {subsubsection}{\numberline {3.4.5}Training Configuration}{14}{subsubsection.3.4.5}%
 \contentsline {subsubsection}{\numberline {3.4.6}Training Pipeline}{15}{subsubsection.3.4.6}%
 \contentsline {subsubsection}{\numberline {3.4.7}Comparison Across Experiments}{15}{subsubsection.3.4.7}%
-\contentsline {section}{\numberline {4}Discussion}{15}{section.4}%
-\contentsline {section}{\numberline {5}Conclusion}{16}{section.5}%
+\contentsline {section}{\numberline {4}Comparative Analysis and Key Findings}{15}{section.4}%
+\contentsline {subsection}{\numberline {4.1}Comparison of MNIST and CIFAR-10 Experiments}{15}{subsection.4.1}%
+\contentsline {section}{\numberline {5}Discussion}{15}{section.5}%
+\contentsline {section}{\numberline {6}Conclusion}{16}{section.6}%
