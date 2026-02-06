@@ -2,7 +2,7 @@
 #SBATCH --job-name=jupyter_lab
 #SBATCH --qos=gpu           # High priority QoS for GPU jobs
 #SBATCH --gres=gpu:1        # Request 1 GPU
-#SBATCH --cpus-per-task=4   # Request 4 CPU cores
+#SBATCH --cpus-per-task=8   # Request 8 CPU cores
 #SBATCH --mem=32G           # Request 32GB of memory
 #SBATCH --time=168:00:00    # Max time: 1 week (168 hours)
 #SBATCH --output=slurm/logs/jupyter_lab_%j.out

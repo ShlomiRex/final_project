@@ -1,3 +1,14 @@
+from pathlib import Path
+
+def list_wikiart_unet_checkpoints() -> list[Path]:
+    """Return all WikiArt UNet checkpoints sorted by epoch (ascending)."""
+    checkpoints = list(CHECKPOINTS_DIR.glob(f"{UNET_WIKIART_CHECKPOINT_PREFIX}*.pt"))
+    def extract_epoch(path):
+        try:
+            return int(str(path).split("_")[-1].split(".")[0])
+        except Exception:
+            return -1
+    return sorted(checkpoints, key=extract_epoch)
 """
 Project Configuration
 
@@ -36,6 +47,13 @@ EXPERIMENT_3_DIR = OUTPUTS_DIR / "experiment_3"
 EXPERIMENT_3_DATASET_DIR = EXPERIMENT_3_DIR / "dataset"
 EXPERIMENT_3_GENERATED_DIR = EXPERIMENT_3_DIR / "generated"
 EXPERIMENT_3_METRICS_DIR = EXPERIMENT_3_DIR / "metrics"
+
+# Experiment 4: CelebA-HQ Latent Diffusion with CFG
+EXPERIMENT_4_DIR = OUTPUTS_DIR / "experiment_4"
+EXPERIMENT_4_DATASET_DIR = EXPERIMENT_4_DIR / "dataset"
+EXPERIMENT_4_GENERATED_DIR = EXPERIMENT_4_DIR / "generated"
+EXPERIMENT_4_METRICS_DIR = EXPERIMENT_4_DIR / "metrics"
+EXPERIMENT_4_LATENTS_DIR = EXPERIMENT_4_DATASET_DIR / "latents"  # For cached latents
 
 # Research paper
 RESEARCH_PAPER_DIR = PROJECT_ROOT / "research-paper"
@@ -114,9 +132,39 @@ UNET_WIKIART_CONFIG = {
     "cross_attention_dim": 512,  # CLIP embedding dimension
 }
 
+# UNet configuration for CelebA-HQ Latent Diffusion (256×256 -> 32×32 latent)
+UNET_CELEBA_LDM_CONFIG = {
+    "sample_size": 32,  # Latent size (256/8)
+    "in_channels": 4,   # VAE latent channels
+    "out_channels": 4,  # VAE latent channels
+    "layers_per_block": 2,
+    "block_out_channels": (128, 256, 384, 512),  # Between CIFAR-10 and WikiArt
+    "down_block_types": (
+        "DownBlock2D",
+        "CrossAttnDownBlock2D",
+        "CrossAttnDownBlock2D",
+        "DownBlock2D",
+    ),
+    "up_block_types": (
+        "UpBlock2D",
+        "CrossAttnUpBlock2D",
+        "CrossAttnUpBlock2D",
+        "UpBlock2D",
+    ),
+    "cross_attention_dim": 512,  # CLIP embedding dimension
+}
+
 # CLIP configuration
 CLIP_MODEL_NAME = "openai/clip-vit-base-patch32"
 TOKENIZER_MAX_LENGTH = 8
+
+# VAE configuration for Experiment 4
+VAE_CONFIG = {
+    "pretrained_model": "stabilityai/sd-vae-ft-mse",
+    "scale_factor": 0.18215,  # Standard SD latent scaling
+    "latent_channels": 4,
+    "downsample_factor": 8,
+}
 
 
 # =============================================================================
@@ -146,10 +194,21 @@ TRAIN_CIFAR10_CONFIG = {
 TRAIN_WIKIART_CONFIG = {
     "num_epochs": 100,
     "learning_rate": 1e-5,
-    "batch_size": 16,
+    "batch_size": 64,  # Optimized after performance profiling - set to 64
     "num_train_timesteps": 1000,
     "beta_schedule": "squaredcos_cap_v2",
     "checkpoint_every_n_epochs": 10,
+}
+
+# Training configuration for CelebA-HQ Latent Diffusion
+TRAIN_CELEBA_LDM_CONFIG = {
+    "num_epochs": 100,
+    "learning_rate": 1e-5,
+    "batch_size": 32,  # Latent diffusion allows larger effective resolution
+    "num_train_timesteps": 1000,
+    "beta_schedule": "squaredcos_cap_v2",
+    "checkpoint_every_n_epochs": 10,
+    "cfg_dropout_prob": 0.1,  # 10% unconditional for classifier-free guidance
 }
 
 
@@ -270,6 +329,61 @@ EXPERIMENT_3_CONFIG = {
     # Prompt template
     "prompt_template": "A painting in the style of {style_name}",
 }
+
+# =============================================================================
+# Experiment 4: CelebA-HQ Evaluation Configuration
+# =============================================================================
+
+# CelebA-HQ attributes used for prompting
+CELEBA_ATTRIBUTES = [
+    "Male",           # 0: gender
+    "Young",          # 1: age
+    "Smiling",        # 2: expression
+    "Eyeglasses",     # 3: accessories
+    "Wearing_Hat",    # 4: accessories
+    "Blond_Hair",     # 5: hair color
+    "Black_Hair",     # 6: hair color
+    "Brown_Hair",     # 7: hair color
+    "Gray_Hair",      # 8: hair color
+    "Bald",           # 9: hair
+    "Bangs",          # 10: hair style
+    "Wavy_Hair",      # 11: hair style
+    "Straight_Hair",  # 12: hair style
+    "Mustache",       # 13: facial hair
+    "Goatee",         # 14: facial hair
+    "No_Beard",       # 15: facial hair
+]
+
+EXPERIMENT_4_CONFIG = {
+    # Image resolution
+    "image_size": 256,
+    
+    # Latent size (image_size / 8)
+    "latent_size": 32,
+    
+    # Guidance scales to evaluate
+    "guidance_scales": [0, 5, 10, 15, 20, 30, 40, 50, 100],
+    
+    # Number of images per prompt per guidance scale
+    "images_per_prompt": 100,
+
+    # Number of unique prompts to generate
+    "num_prompts": 50,
+    
+    # Attributes used for prompting
+    "attributes": CELEBA_ATTRIBUTES,
+    
+    # Prompt templates
+    "prompt_templates": [
+        "A photo of a {age} {gender} {expression}",
+        "A portrait of a {gender} person with {hair}",
+        "A {age} {gender} person {accessories}",
+    ],
+}
+
+# Experiment 4: CelebA-HQ LDM checkpoint names
+UNET_CELEBA_LDM_CHECKPOINT_PREFIX = "celeba_ldm_unet_checkpoint_epoch_"
+CELEBA_CLASSIFIER_CHECKPOINT_NAME = "celeba_attribute_classifier.pt"
 
 
 # =============================================================================
@@ -449,6 +563,52 @@ def ensure_experiment_3_dirs():
         get_style_dir(EXPERIMENT_3_DATASET_DIR, style_idx).mkdir(parents=True, exist_ok=True)
     
     # Create guidance scale subdirs with style subdirs
+
+
+# =============================================================================
+# Helper Functions - Experiment 4 (CelebA-HQ LDM)
+# =============================================================================
+
+def get_celeba_ldm_unet_checkpoint_path(epoch: int) -> Path:
+    """Get path to CelebA LDM UNet checkpoint for a specific epoch."""
+    return CHECKPOINTS_DIR / f"{UNET_CELEBA_LDM_CHECKPOINT_PREFIX}{epoch}.pt"
+
+
+def get_latest_celeba_ldm_unet_checkpoint() -> Path:
+    """Find the latest CelebA LDM UNet checkpoint by epoch number."""
+    checkpoints = list(CHECKPOINTS_DIR.glob(f"{UNET_CELEBA_LDM_CHECKPOINT_PREFIX}*.pt"))
+    if not checkpoints:
+        raise FileNotFoundError(f"No CelebA LDM UNet checkpoints found in {CHECKPOINTS_DIR}")
+    return max(checkpoints, key=lambda x: int(str(x).split("_")[-1].split(".")[0]))
+
+
+def get_celeba_classifier_checkpoint_path() -> Path:
+    """Get path to CelebA attribute classifier checkpoint."""
+    return CHECKPOINTS_DIR / CELEBA_CLASSIFIER_CHECKPOINT_NAME
+
+
+def get_celeba_generated_images_dir(guidance_scale: int) -> Path:
+    """Get directory for generated CelebA-HQ images at a specific guidance scale."""
+    return EXPERIMENT_4_GENERATED_DIR / f"guidance_{guidance_scale}"
+
+
+def ensure_experiment_4_dirs():
+    """Create all experiment 4 directories if they don't exist."""
+    dirs = [
+        EXPERIMENT_4_DIR,
+        EXPERIMENT_4_DATASET_DIR,
+        EXPERIMENT_4_GENERATED_DIR,
+        EXPERIMENT_4_METRICS_DIR,
+        EXPERIMENT_4_LATENTS_DIR,
+        FIGURES_DIR,
+    ]
+    for d in dirs:
+        d.mkdir(parents=True, exist_ok=True)
+    
+    # Create guidance scale subdirs
+    for guidance in EXPERIMENT_4_CONFIG["guidance_scales"]:
+        guidance_dir = get_celeba_generated_images_dir(guidance)
+        guidance_dir.mkdir(parents=True, exist_ok=True)
     for guidance in EXPERIMENT_3_CONFIG["guidance_scales"]:
         guidance_dir = get_wikiart_generated_images_dir(guidance)
         for style_idx in EXPERIMENT_3_CONFIG["classes"]:

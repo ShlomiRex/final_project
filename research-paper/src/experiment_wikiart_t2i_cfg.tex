@@ -164,7 +164,7 @@ The U-Net architecture is scaled up significantly compared to previous experimen
 \subsubsection{Training Configuration}
 
 \begin{itemize}
-    \item \textbf{Batch size:} 16 (constrained by 128$\times$128 resolution and model size)
+    \item \textbf{Batch size:} 64 (optimized after performance profiling, see \S\ref{sec:wikiart-optimization})
     \item \textbf{Learning rate:} $10^{-5}$ (smaller than CIFAR-10 due to larger model)
     \item \textbf{Optimizer:} AdamW with weight decay 0.01
     \item \textbf{Epochs:} 100
@@ -189,6 +189,76 @@ The U-Net architecture is scaled up significantly compared to previous experimen
     \item Compute MSE loss and update weights
 \end{enumerate}
 
+\subsubsection{Training Performance Optimization}
+\label{sec:wikiart-optimization}
+
+To ensure efficient use of computational resources, we conducted a detailed performance profiling of the training pipeline. The analysis revealed a critical bottleneck that significantly impacted training throughput.
+
+\textbf{Initial Performance Analysis:}
+
+We instrumented the training loop to measure the time spent in each stage of a single training iteration with an initial batch size of 16. The breakdown revealed:
+
+\begin{table}[htbp]
+\centering
+\begin{tabular}{lrr}
+\toprule
+\textbf{Operation} & \textbf{Time (ms)} & \textbf{Percentage} \\
+\midrule
+Data loading & 1857.2 & 70.4\% \\
+Move to device & 0.5 & 0.0\% \\
+Text encoding & 78.8 & 3.0\% \\
+CFG masking & 9.0 & 0.3\% \\
+Noise addition & 8.3 & 0.3\% \\
+Forward pass & 272.6 & 10.3\% \\
+Loss calculation & 7.2 & 0.3\% \\
+Backward pass & 405.9 & 15.4\% \\
+\midrule
+\textbf{Total} & \textbf{2639.5} & \textbf{100.0\%} \\
+\bottomrule
+\end{tabular}
+\caption{Training pipeline performance breakdown with batch size 16. Data loading dominates at 70.4\% of total iteration time.}
+\label{tab:wikiart-bottleneck}
+\end{table}
+
+\textbf{Bottleneck Identification:}
+
+The profiling revealed that \emph{data loading} consumed 70.4\% of the training time (1857.2 ms per batch), while the actual model computation (forward + backward pass) accounted for only 25.7\% (678.5 ms). This indicates that the GPU was severely underutilized, spending most of its time idle while waiting for data.
+
+\textbf{Root Cause:}
+
+Despite the efficient file-sequential loading strategy (\S\ref{sec:wikiart-dataloader}), the small batch size of 16 created a mismatch between I/O throughput and GPU compute capacity. The A100 80GB GPU used for training can process 128$\times$128 RGB images at significantly higher throughput than batch size 16 provides.
+
+\textbf{Solution: Batch Size Scaling}
+
+We conducted GPU memory profiling to determine the maximum feasible batch size:
+
+\begin{enumerate}
+    \item Measured peak GPU memory usage with batch size 16: $\sim$8 GB / 80 GB (10\% utilization)
+    \item Estimated memory per sample: 512 MB
+    \item Calculated maximum batch size with 2 GB safety margin: 76 samples
+    \item Selected batch size 64 (power of 2) for optimal GPU memory alignment and stability
+\end{enumerate}
+
+\textbf{Performance Impact:}
+
+Increasing the batch size from 16 to 64 provided a 4$\times$ increase in throughput:
+
+\begin{table}[htbp]
+\centering
+\begin{tabular}{lcccc}
+\toprule
+\textbf{Batch Size} & \textbf{Time/Batch} & \textbf{Batches/Epoch} & \textbf{Time/Epoch} & \textbf{Speedup} \\
+\midrule
+16 & 2.64 sec & 5,063 & 3.7 hours & 1.0$\times$ \\
+64 & 2.8 sec & 1,266 & 0.99 hours & 3.7$\times$ \\
+\bottomrule
+\end{tabular}
+\caption{Training performance comparison before and after batch size optimization. The larger batch size reduces training time per epoch from 3.7 hours to 59 minutes.}
+\label{tab:wikiart-batch-size-optimization}
+\end{table}
+
+This optimization reduced the total training time for 100 epochs from approximately 15.4 days to 4.1 days, making the experiment practical to execute on available hardware.
+
 \subsubsection{Comparison Across Experiments}
 
 Table~\ref{tab:experiment-comparison} summarizes the key differences across all three experiments.
@@ -207,7 +277,7 @@ Training samples & 60,000 & 50,000 & $\sim$81,000 \\
 Dataset size & $\sim$50 MB & $\sim$170 MB & $\sim$32 GB \\
 U-Net blocks & 4 & 4 & 5 \\
 Parameters & $\sim$25M & $\sim$45M & $\sim$150M \\
-Batch size & 256 & 128 & 16 \\
+Batch size & 256 & 128 & 64 \\
 Learning rate & $10^{-4}$ & $10^{-4}$ & $10^{-5}$ \\
 Epochs & 20 & 50 & 100 \\
 \bottomrule

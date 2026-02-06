@@ -59,7 +59,17 @@ class CustomUNet2DConditionModelWikiArt(UNet2DConditionModel):
         
         model = cls().to(device)
         checkpoint = torch.load(checkpoint_path, map_location=device)
-        model.load_state_dict(checkpoint["unet_state_dict"])
+        
+        # Handle different checkpoint formats
+        if "unet_state_dict" in checkpoint:
+            model.load_state_dict(checkpoint["unet_state_dict"])
+        elif "model_state_dict" in checkpoint:
+            model.load_state_dict(checkpoint["model_state_dict"])
+        elif "state_dict" in checkpoint:
+            model.load_state_dict(checkpoint["state_dict"])
+        else:
+            # Assume the checkpoint is the state dict itself
+            model.load_state_dict(checkpoint)
         
         return model, checkpoint
     
@@ -97,7 +107,12 @@ def load_wikiart_unet_from_checkpoint(checkpoint_path: str, device: torch.device
     model, checkpoint = CustomUNet2DConditionModelWikiArt.from_checkpoint(
         checkpoint_path, device
     )
-    print(f"Loaded WikiArt UNet from epoch {checkpoint['epoch']}")
+    
+    # Handle different checkpoint formats
+    if isinstance(checkpoint, dict) and 'epoch' in checkpoint:
+        print(f"Loaded WikiArt UNet from epoch {checkpoint['epoch']}")
+    else:
+        print(f"Loaded WikiArt UNet from checkpoint")
     
     return model, checkpoint
 
