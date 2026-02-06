@@ -378,9 +378,11 @@ EXPERIMENT_4_CONFIG = {
     
     # Prompt templates
     "prompt_templates": [
-        "A photo of a {age} {gender} {expression}",
-        "A portrait of a {gender} person with {hair}",
-        "A {age} {gender} person {accessories}",
+        "A photo of a {age} {gender} {expression}, with {hair}",
+        "A {age} {gender} {expression}, {hair}, {accessories}",
+        "A celebrity {age} {gender} {expression}, {hair}",
+        "A {age} {gender} {expression}, {accessories}",
+        "A headshot of a {age} {gender} {expression}, {hair}",
     ],
 }
 

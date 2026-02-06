@@ -105,6 +105,9 @@ class CelebAHQWithCaptions(Dataset):
     
     def _parse_attributes(self, item):
         """Parse attributes from dataset item (handles different formats)."""
+        attr_dict = {}
+        
+        # First try: item has 'attributes' key (some HF formats)
         if 'attributes' in item:
             attrs = item['attributes']
             
@@ -115,11 +118,20 @@ class CelebAHQWithCaptions(Dataset):
             # Handle tensor/array format
             elif isinstance(attrs, (torch.Tensor, np.ndarray, list)):
                 # Create dict with attribute names
-                attr_dict = {}
                 for i, name in enumerate(self._available_attributes):
                     if i < len(attrs):
                         attr_dict[name] = bool(attrs[i] > 0)  # Convert to boolean
                 return attr_dict
+        
+        # Second try: attributes are separate keys in item (flwrlabs/celeba format)
+        # Try to load attributes directly from item keys
+        for attr_name in self._available_attributes:
+            if attr_name in item:
+                attr_dict[attr_name] = bool(item[attr_name] > 0 if isinstance(item[attr_name], (int, float)) else item[attr_name])
+        
+        # If we found any attributes this way, return them
+        if attr_dict:
+            return attr_dict
         
         # Fallback: return empty dict
         return {}
