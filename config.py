@@ -204,10 +204,10 @@ TRAIN_WIKIART_CONFIG = {
 TRAIN_CELEBA_LDM_CONFIG = {
     "num_epochs": 100,
     "learning_rate": 1e-5,
-    "batch_size": 32,  # Latent diffusion allows larger effective resolution
+    "batch_size": 128,  # Latent diffusion allows larger effective resolution
     "num_train_timesteps": 1000,
     "beta_schedule": "squaredcos_cap_v2",
-    "checkpoint_every_n_epochs": 10,
+    "checkpoint_every_n_epochs": 5,
     "cfg_dropout_prob": 0.1,  # 10% unconditional for classifier-free guidance
 }
 
@@ -353,6 +353,9 @@ CELEBA_ATTRIBUTES = [
     "Goatee",         # 14: facial hair
     "No_Beard",       # 15: facial hair
 ]
+
+# CelebA Dataset
+CELEBA_DATASET_NAME = "flwrlabs/celeba"
 
 EXPERIMENT_4_CONFIG = {
     # Image resolution
