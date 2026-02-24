@@ -30,13 +30,26 @@
 \contentsline {subsection}{\numberline {3.4}WikiArt Text-to-Image Generation with Classifier-Free Guidance}{13}{subsection.3.4}%
 \contentsline {subsubsection}{\numberline {3.4.1}Objective}{13}{subsubsection.3.4.1}%
 \contentsline {subsubsection}{\numberline {3.4.2}Dataset}{13}{subsubsection.3.4.2}%
-\contentsline {subsubsection}{\numberline {3.4.3}Dataset Loading Challenge and Solution}{13}{subsubsection.3.4.3}%
+\contentsline {subsubsection}{\numberline {3.4.3}Dataset Loading Challenge and Solution}{14}{subsubsection.3.4.3}%
 \contentsline {subsubsection}{\numberline {3.4.4}Model Architecture}{14}{subsubsection.3.4.4}%
 \contentsline {subsubsection}{\numberline {3.4.5}Training Configuration}{15}{subsubsection.3.4.5}%
 \contentsline {subsubsection}{\numberline {3.4.6}Training Pipeline}{15}{subsubsection.3.4.6}%
 \contentsline {subsubsection}{\numberline {3.4.7}Training Performance Optimization}{15}{subsubsection.3.4.7}%
 \contentsline {subsubsection}{\numberline {3.4.8}Comparison Across Experiments}{16}{subsubsection.3.4.8}%
-\contentsline {section}{\numberline {4}Comparative Analysis and Key Findings}{16}{section.4}%
-\contentsline {subsection}{\numberline {4.1}Comparison of MNIST and CIFAR-10 Experiments}{16}{subsection.4.1}%
-\contentsline {section}{\numberline {5}Discussion}{16}{section.5}%
-\contentsline {section}{\numberline {6}Conclusion}{17}{section.6}%
+\contentsline {subsection}{\numberline {3.5}CelebA Latent Diffusion with Classifier-Free Guidance}{17}{subsection.3.5}%
+\contentsline {subsubsection}{\numberline {3.5.1}Objective}{17}{subsubsection.3.5.1}%
+\contentsline {subsubsection}{\numberline {3.5.2}Dataset}{17}{subsubsection.3.5.2}%
+\contentsline {subsubsection}{\numberline {3.5.3}Attribute-to-Text Caption Generation}{17}{subsubsection.3.5.3}%
+\contentsline {subsubsection}{\numberline {3.5.4}Latent Diffusion Architecture}{18}{subsubsection.3.5.4}%
+\contentsline {paragraph}{Why 4 Latent Channels Instead of 3?}{18}{section*.1}%
+\contentsline {subsubsection}{\numberline {3.5.5}Model Architecture}{19}{subsubsection.3.5.5}%
+\contentsline {subsubsection}{\numberline {3.5.6}Training Configuration}{20}{subsubsection.3.5.6}%
+\contentsline {subsubsection}{\numberline {3.5.7}Training Pipeline}{20}{subsubsection.3.5.7}%
+\contentsline {subsubsection}{\numberline {3.5.8}Inference Pipeline}{20}{subsubsection.3.5.8}%
+\contentsline {subsubsection}{\numberline {3.5.9}Results}{21}{subsubsection.3.5.9}%
+\contentsline {subsubsection}{\numberline {3.5.10}Comparison Across All Experiments}{21}{subsubsection.3.5.10}%
+\contentsline {subsubsection}{\numberline {3.5.11}Key Observations}{21}{subsubsection.3.5.11}%
+\contentsline {section}{\numberline {4}Comparative Analysis and Key Findings}{22}{section.4}%
+\contentsline {subsection}{\numberline {4.1}Comparison of MNIST and CIFAR-10 Experiments}{22}{subsection.4.1}%
+\contentsline {section}{\numberline {5}Discussion}{22}{section.5}%
+\contentsline {section}{\numberline {6}Conclusion}{22}{section.6}%

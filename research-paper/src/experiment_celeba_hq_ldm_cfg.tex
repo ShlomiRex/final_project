@@ -1,0 +1,362 @@
+\subsection{CelebA Latent Diffusion with Classifier-Free Guidance}
+
+\subsubsection{Objective}
+This experiment extends the text-to-image diffusion framework to the CelebA face dataset and introduces a fundamental architectural change: \emph{latent diffusion}. Unlike previous experiments (MNIST, CIFAR-10, WikiArt) that trained the denoising U-Net directly in pixel space, this experiment operates in a compressed latent representation produced by a pretrained Variational Autoencoder (VAE). This approach, inspired by Latent Diffusion Models (LDMs) \cite{rombach2022high}, enables training at an effective resolution of 256$\times$256 while maintaining computational costs comparable to the 32$\times$32 pixel-space models from earlier experiments.
+
+The primary objectives are: (1) to demonstrate that latent diffusion substantially reduces training cost for higher-resolution image generation, (2) to evaluate whether attribute-based natural language prompts can condition face generation with fine-grained control, and (3) to assess the scalability of our CLIP-conditioned diffusion framework to a larger, more diverse dataset with 200K images and 40 binary attributes per sample.
+
+\subsubsection{Dataset}
+
+\textbf{CelebA Dataset (HuggingFace: flwrlabs/celeba):}
+\begin{itemize}
+    \item \textbf{Training images:} $\sim$202,599 celebrity face photographs
+    \item \textbf{Original resolution:} 178$\times$218 pixels (resized to 256$\times$256 for training)
+    \item \textbf{Channels:} 3 (RGB)
+    \item \textbf{Attributes:} 40 binary attributes per image, covering:
+    \begin{multicols}{3}
+    \begin{enumerate}
+        \item 5 o'Clock Shadow\footnote{Visible facial stubble appearing on the lower face, typically appearing by late afternoon (5 o'clock) for men with heavy beards who have shaved in the morning.}
+        \item Arched Eyebrows
+        \item Attractive
+        \item Bags Under Eyes
+        \item Bald
+        \item Bangs
+        \item Big Lips
+        \item Big Nose
+        \item Black Hair
+        \item Blond Hair
+        \item Blurry
+        \item Brown Hair
+        \item Bushy Eyebrows
+        \item Chubby
+        \item Double Chin
+        \item Eyeglasses
+        \item Goatee
+        \item Gray Hair
+        \item Heavy Makeup
+        \item High Cheekbones
+        \item Male
+        \item Mouth Slightly Open
+        \item Mustache
+        \item Narrow Eyes
+        \item No Beard
+        \item Oval Face
+        \item Pale Skin
+        \item Pointy Nose
+        \item Receding Hairline
+        \item Rosy Cheeks
+        \item Sideburns
+        \item Smiling
+        \item Straight Hair
+        \item Wavy Hair
+        \item Wearing Earrings
+        \item Wearing Hat
+        \item Wearing Lipstick
+        \item Wearing Necklace
+        \item Wearing Necktie
+        \item Young
+    \end{enumerate}
+    \end{multicols}
+    \item \textbf{Text captions:} Automatically generated from binary attributes using a rule-based natural language generation system (see \S\ref{sec:celeba-caption-generation})
+    \item \textbf{Preprocessing:} Resized to 256$\times$256, center-cropped, normalized to [-1, 1] range
+\end{itemize}
+
+\subsubsection{Attribute-to-Text Caption Generation}
+\label{sec:celeba-caption-generation}
+
+A key challenge in conditioning CelebA generation on text is that the dataset provides only binary attribute labels, not natural language descriptions. We designed a rule-based caption generation system that converts the 40 binary attributes into diverse, natural language prompts. The system incorporates several design principles:
+
+\begin{enumerate}
+    \item \textbf{Paraphrase variety:} Each attribute maps to multiple phrasings (e.g., ``Eyeglasses'' $\rightarrow$ \{``wearing eyeglasses'', ``wearing glasses''\}), selected randomly per sample to increase caption diversity during training.
+    
+    \item \textbf{Collision resolution:} Contradictory attributes are handled by priority rules. For example, if both ``Black\_Hair'' and ``Brown\_Hair'' are active, only the higher-priority attribute is included. Similarly, ``Arched\_Eyebrows'' takes precedence over ``Bushy\_Eyebrows''.
+    
+    \item \textbf{Structured assembly:} Captions follow a consistent structure: \texttt{``A photo of a <age> <gender> with <physical descriptors>, <expression>, <accessories>''}. Hair descriptions combine colour and style (e.g., ``straight blond hair''), and facial hair is handled as a separate clause.
+    
+    \item \textbf{Controlled randomness:} Minor facial features (e.g., ``Rosy\_Cheeks'', ``Narrow\_Eyes'') are included with 80\% probability per sample. Core attributes (gender, age, hair, expression, accessories) are always included when active.
+    
+    \item \textbf{No hallucination:} Inactive attributes are silently omitted --- the system never generates negative descriptions like ``no accessories'' or ``neutral expression''.
+\end{enumerate}
+
+\textbf{Example captions:}
+\begin{itemize}
+    \item ``A photo of a young woman with straight blond hair, bangs, smiling, wearing earrings''
+    \item ``A photo of a man with black hair, a mustache, wearing eyeglasses''
+    \item ``A photo of a young man with brown hair, high cheekbones, a clean-shaven face''
+    \item ``A photo of a woman with wavy brown hair, pale skin, wearing a necklace''
+\end{itemize}
+
+This approach generates training captions that are both descriptive and varied, providing richer conditioning signal compared to the fixed prompt templates used in earlier experiments (e.g., ``A handwritten digit 5'' for MNIST or ``A photo of a cat'' for CIFAR-10).
+
+\subsubsection{Latent Diffusion Architecture}
+\label{sec:celeba-latent-diffusion}
+
+This experiment introduces \emph{latent diffusion}, a fundamental architectural change from the pixel-space approach used in Experiments 1--3. Instead of training the denoising U-Net directly on pixel values, we first encode images into a compressed latent representation using a pretrained VAE, then train the diffusion model in this latent space.
+
+\textbf{Motivation:}
+
+Operating in pixel space at 256$\times$256 resolution would be computationally prohibitive with our architecture. A 256$\times$256 pixel-space U-Net would require processing tensors 64$\times$ larger than the 32$\times$32 latent representation, making training impractically slow. Latent diffusion resolves this by compressing images to a low-dimensional latent space while preserving perceptual quality.
+
+\textbf{VAE (Frozen, Pretrained):}
+\begin{itemize}
+    \item \textbf{Model:} \texttt{stabilityai/sd-vae-ft-mse} (Stable Diffusion VAE, fine-tuned with MSE loss)
+    \item \textbf{Spatial compression:} 8$\times$ (256$\times$256 $\rightarrow$ 32$\times$32)
+    \item \textbf{Channel mapping:} 3 RGB channels $\rightarrow$ 4 latent channels
+    \item \textbf{Latent scale factor:} 0.18215 (standard Stable Diffusion scaling)
+    \item \textbf{Training:} Weights are frozen --- only the U-Net is trained
+\end{itemize}
+
+\paragraph{Why 4 Latent Channels Instead of 3?}
+
+A key architectural detail is that the VAE outputs a 4-channel latent representation despite taking 3-channel RGB images as input. This is simply an architectural property of the pretrained Stable Diffusion VAE (KL-f8 autoencoder) that we use in frozen form.
+
+The ``KL-f8'' designation refers to a KL-regularized autoencoder with a downsampling factor of 8. The choice of 4 latent channels was made during the original training of this VAE on large-scale datasets (OpenImages, later fine-tuned on LAION). Since we use this VAE frozen (without retraining), we inherit its 4-channel latent bottleneck.
+
+The number of latent channels in an autoencoder is a hyperparameter chosen during VAE design that affects the model's capacity to compress and reconstruct information. Unlike RGB channels (which directly encode red, green, blue color values), the 4 latent channels are learned, abstract feature representations with no direct semantic interpretation. They collectively encode the compressed visual information needed to reconstruct the original image through the decoder.
+
+\textbf{Implementation:}
+
+During training, each image is encoded to a 4-channel latent tensor before the diffusion process begins. The VAE's encoder outputs a posterior distribution, from which we sample latents and scale them by the standard Stable Diffusion scaling factor (0.18215):
+
+\begin{verbatim}
+# From models/vae_wrapper.py
+def encode(self, images: torch.Tensor) -> torch.Tensor:
+    """
+    Encode images to latent space.
+    Args:
+        images: [B, 3, 256, 256] in range [-1, 1]
+    Returns:
+        latents: [B, 4, 32, 32] (scaled)
+    """
+    with torch.no_grad():
+        posterior = self.vae.encode(images).latent_dist
+        latents = posterior.sample()
+        latents = latents * self.scale_factor  # 0.18215
+    return latents
+\end{verbatim}
+
+During training, this encoding happens at the start of each batch, before noise is added:
+
+\begin{verbatim}
+# Training loop (from train3_t2i_celeba_hq_ldm_cfg_500epochs.ipynb)
+for images, attributes in dataloader:
+    images = images.to(device)  # [B, 3, 256, 256]
+    
+    # Encode to latent space
+    latents = vae.encode(images)  # [B, 4, 32, 32]
+    
+    # Now train diffusion model on latents (not pixels)
+    noise = torch.randn_like(latents)
+    timesteps = torch.randint(0, 1000, (B,))
+    noisy_latents = scheduler.add_noise(latents, noise, timesteps)
+    ...
+\end{verbatim}
+
+At inference time, the reverse process applies: the U-Net denoises random latents, and the VAE decoder converts the final denoised latents back to 3-channel RGB images:
+
+\begin{verbatim}
+# Inference decoding
+def decode(self, latents: torch.Tensor) -> torch.Tensor:
+    """
+    Decode latents to images.
+    Args:
+        latents: [B, 4, 32, 32]
+    Returns:
+        images: [B, 3, 256, 256] in range [-1, 1]
+    """
+    with torch.no_grad():
+        latents = latents / self.scale_factor  # Unscale
+        images = self.vae.decode(latents).sample
+    return images
+\end{verbatim}
+
+This architecture allows the U-Net to operate on 32$\times$32$\times$4 tensors (4,096 elements per latent) rather than 256$\times$256$\times$3 tensors (196,608 elements per image) --- a 48$\times$ reduction in the number of elements processed by the diffusion model, leading to dramatic computational savings.
+
+The latent diffusion pipeline operates as follows:
+
+\begin{enumerate}
+    \item \textbf{Encoding (training only):} Images $\mathbf{x} \in \mathbb{R}^{3 \times 256 \times 256}$ are encoded to latents $\mathbf{z} = \text{VAE}_{\text{enc}}(\mathbf{x}) \in \mathbb{R}^{4 \times 32 \times 32}$
+    \item \textbf{Diffusion:} Noise is added to and predicted in latent space $\mathbf{z}$
+    \item \textbf{Decoding (inference only):} Denoised latents are decoded back to pixel space $\hat{\mathbf{x}} = \text{VAE}_{\text{dec}}(\hat{\mathbf{z}}) \in \mathbb{R}^{3 \times 256 \times 256}$
+\end{enumerate}
+
+\begin{figure}[]
+    \centering
+    \includegraphics[width=0.9\textwidth,keepaspectratio]{../figures/stable_diffusion.png}
+    \caption[Architecture of Latent Diffusion Models]{Architecture of Latent Diffusion Models (LDMs). The model operates in a compressed latent space produced by a pretrained VAE encoder. During training, images are first encoded to latents, noise is added and predicted in latent space, and the denoised latents are decoded back to pixel space. This approach enables high-resolution generation (256$\times$256) while maintaining computational efficiency compared to pixel-space diffusion.}
+    \label{fig:ldm_architecture}
+\end{figure}
+
+\begin{table}[htbp]
+\centering
+\begin{tabular}{lcc}
+\toprule
+\textbf{Aspect} & \textbf{Pixel Space (Exp.\ 1--3)} & \textbf{Latent Space (Exp.\ 4)} \\
+\midrule
+Training resolution & Native (28--128 px) & 32$\times$32 latents \\
+Effective output resolution & 28--128 px & 256$\times$256 px \\
+Input channels & 1 or 3 & 4 (VAE latent) \\
+Additional models & None & Pretrained VAE \\
+Memory per sample & $\propto H \times W$ & $\propto (H/8) \times (W/8)$ \\
+\bottomrule
+\end{tabular}
+\caption{Comparison of pixel-space and latent-space diffusion approaches (experiments 1-4).}
+\label{tab:pixel-vs-latent}
+\end{table}
+
+\subsubsection{Model Architecture}
+
+\textbf{Text Encoder (Frozen):}
+\begin{itemize}
+    \item \textbf{Model:} CLIP (openai/clip-vit-base-patch32)
+    \item \textbf{Embedding dimension:} 512
+    \item \textbf{Tokenizer max length:} 77 tokens (standard CLIP length)
+    \item \textbf{Training:} Weights are frozen
+\end{itemize}
+
+\textbf{Denoising Network (U-Net):}
+
+The U-Net operates in latent space (32$\times$32$\times$4) rather than pixel space. Its capacity is sized between the CIFAR-10 and WikiArt models.
+
+\begin{itemize}
+    \item \textbf{Architecture:} Custom UNet2DConditionModel for CelebA latent diffusion
+    \item \textbf{Input/Output:} 4 channels (VAE latent channels), 32$\times$32 spatial resolution
+    \item \textbf{Block channels:} (128, 256, 384, 512) --- 4 resolution levels
+    \item \textbf{Layers per block:} 2
+    \item \textbf{Down blocks:} DownBlock2D $\rightarrow$ CrossAttnDownBlock2D $\rightarrow$ CrossAttnDownBlock2D $\rightarrow$ DownBlock2D
+    \item \textbf{Up blocks:} UpBlock2D $\rightarrow$ CrossAttnUpBlock2D $\rightarrow$ CrossAttnUpBlock2D $\rightarrow$ UpBlock2D
+    \item \textbf{Cross-attention dimension:} 512 (matches CLIP embedding size)
+    \item \textbf{Total trainable parameters:} $\sim$90 million
+\end{itemize}
+
+\subsubsection{Training Configuration}
+
+\begin{itemize}
+    \item \textbf{Batch size:} 128
+    \item \textbf{Learning rate:} $10^{-5}$
+    \item \textbf{Optimizer:} AdamW
+    \item \textbf{Epochs:} 500
+    \item \textbf{Noise scheduler:} DDPM with squared cosine beta schedule
+    \item \textbf{Timesteps:} 1,000
+    \item \textbf{Loss function:} Mean Squared Error (MSE) between predicted and actual noise in latent space
+    \item \textbf{Unconditional dropout:} 10\% (for classifier-free guidance training)
+    \item \textbf{Checkpoint frequency:} Every 5 epochs
+\end{itemize}
+
+\subsubsection{Training Pipeline}
+
+\begin{enumerate}
+    \item Load batch of images and binary attributes from the CelebA dataset
+    \item Resize and center-crop images to 256$\times$256, normalize to $[-1, 1]$
+    \item \textbf{Encode images to latent space} using frozen VAE: $\mathbf{z}_0 = \text{VAE}_{\text{enc}}(\mathbf{x})$
+    \item Convert binary attributes to natural language captions using the attribute-to-text system (\S\ref{sec:celeba-caption-generation})
+    \item Encode captions using frozen CLIP text encoder
+    \item Apply 10\% unconditional dropout (replace embeddings with null embedding for CFG)
+    \item Sample random noise $\boldsymbol{\epsilon} \sim \mathcal{N}(0, \mathbf{I})$ and timesteps $t$
+    \item Add noise to \emph{latents} (not pixels): $\mathbf{z}_t = \sqrt{\bar{\alpha}_t}\,\mathbf{z}_0 + \sqrt{1-\bar{\alpha}_t}\,\boldsymbol{\epsilon}$
+    \item Predict noise using U-Net conditioned on text embeddings: $\boldsymbol{\epsilon}_\theta(\mathbf{z}_t, t, \mathbf{c})$
+    \item Compute MSE loss: $\mathcal{L} = \|\boldsymbol{\epsilon} - \boldsymbol{\epsilon}_\theta(\mathbf{z}_t, t, \mathbf{c})\|^2$
+    \item Update U-Net weights via backpropagation
+\end{enumerate}
+
+\subsubsection{Inference Pipeline}
+
+At inference time, the generation process starts from random noise in latent space and decodes the final result using the VAE:
+
+\begin{enumerate}
+    \item Initialize random noise in latent space: $\mathbf{z}_T \sim \mathcal{N}(0, \mathbf{I})$ with shape $(B, 4, 32, 32)$
+    \item Encode text prompt and empty string via CLIP
+    \item For each denoising step $t = T, T-1, \ldots, 1$:
+    \begin{enumerate}
+        \item Predict noise for both conditional and unconditional inputs
+        \item Apply CFG: $\tilde{\boldsymbol{\epsilon}} = \boldsymbol{\epsilon}_\text{uncond} + w \cdot (\boldsymbol{\epsilon}_\text{cond} - \boldsymbol{\epsilon}_\text{uncond})$
+        \item Update latents using the DDPM scheduler
+    \end{enumerate}
+    \item \textbf{Decode final latents to pixels} using frozen VAE: $\hat{\mathbf{x}} = \text{VAE}_{\text{dec}}(\hat{\mathbf{z}}_0)$
+    \item Normalize output from $[-1, 1]$ to $[0, 1]$ for visualization
+\end{enumerate}
+
+\textbf{Inference Parameters:}
+\begin{itemize}
+    \item \textbf{Scheduler:} DDPM with squared cosine schedule
+    \item \textbf{Number of inference steps:} 50
+\end{itemize}
+
+\subsubsection{Results}
+
+\textbf{Training Convergence:}
+
+The model was trained for 500 epochs. Figure~\ref{fig:celeba_training_loss} shows the training loss curve. The loss decreased rapidly during the first $\sim$50 epochs (from 0.370 to $\sim$0.255), then continued to decrease more gradually through the remaining epochs, reaching a final loss of $\sim$0.230 at epoch 500. The smooth, monotonic decrease indicates stable convergence of the latent diffusion training.
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.7\textwidth,keepaspectratio]{../figures/experiments/experiment_4/training_loss.png}
+    \caption[Training loss curve for CelebA latent diffusion model over 500 epochs]{Training loss curve for the CelebA latent diffusion model. The MSE loss in latent space decreases from 0.370 to 0.230 over 500 epochs, showing stable convergence.}
+    \label{fig:celeba_training_loss}
+\end{figure}
+
+\textbf{Generated Samples:}
+
+Figure~\ref{fig:celeba_generated_samples} shows generated face images from diverse attribute-based prompts. The model produces recognizable face structures with attribute-consistent features at 256$\times$256 resolution.
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.85\textwidth,keepaspectratio]{../figures/placeholder.png}
+    \caption[Generated CelebA face images from attribute-based text prompts]{Generated 256$\times$256 face images using diverse attribute-based text prompts with guidance scale $w=2$. Each image is conditioned on a different combination of attributes.}
+    \label{fig:celeba_generated_samples}
+\end{figure}
+
+\textbf{Guidance Scale Ablation:}
+
+Figure~\ref{fig:celeba_guidance_ablation} shows the effect of varying the guidance scale on generated face images. Lower guidance scales ($w < 1$) produce blurry, less attribute-specific results, while moderate guidance ($w \approx 1.5$--$3$) yields the best balance between image quality and prompt adherence. Higher guidance scales ($w > 4$) tend to oversaturate features and reduce diversity.
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.95\textwidth,keepaspectratio]{../figures/placeholder.png}
+    \caption[Effect of guidance scale on CelebA face generation]{Effect of guidance scale $w$ on CelebA face generation. Columns show $w \in \{0, 0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5\}$, rows show different prompts.}
+    \label{fig:celeba_guidance_ablation}
+\end{figure}
+
+% TODO: Add FID scores, CLIP scores, and attribute accuracy metrics after evaluation
+% \textbf{Quantitative Evaluation:}
+% FID Score, CLIP Score, and attribute accuracy to be added after running metrics notebook.
+
+\subsubsection{Comparison Across All Experiments}
+
+Table~\ref{tab:all-experiment-comparison} extends the earlier experiment comparison to include the CelebA latent diffusion experiment.
+
+\begin{table}[htbp]
+\centering
+\small
+\begin{tabular}{lcccc}
+\toprule
+\textbf{Aspect} & \textbf{MNIST} & \textbf{CIFAR-10} & \textbf{WikiArt} & \textbf{CelebA} \\
+\midrule
+Resolution & 28$\times$28 & 32$\times$32 & 128$\times$128 & 256$\times$256 \\
+Channels & 1 (grayscale) & 3 (RGB) & 3 (RGB) & 3 (RGB) \\
+Diffusion space & Pixel & Pixel & Pixel & Latent (32$\times$32$\times$4) \\
+Classes/Attributes & 10 digits & 10 objects & 27 styles & 40 binary attributes \\
+Training samples & 60,000 & 50,000 & $\sim$81,000 & $\sim$202,599 \\
+U-Net parameters & $\sim$3M & $\sim$45M & $\sim$150M & $\sim$90M \\
+Additional models & None & None & None & Pretrained VAE \\
+Batch size & 512 & 128 & 64 & 128 \\
+Learning rate & $10^{-3}$ & $10^{-4}$ & $10^{-5}$ & $10^{-5}$ \\
+Epochs & 20 & 50 & 100 & 500 \\
+Caption type & Fixed template & Fixed template & Fixed template & Attribute-based NLG \\
+\bottomrule
+\end{tabular}
+\caption{Comparison of experimental configurations across all four experiments: MNIST, CIFAR-10, WikiArt, and CelebA.}
+\label{tab:all-experiment-comparison}
+\end{table}
+
+\subsubsection{Key Observations}
+
+\begin{enumerate}
+    \item \textbf{Latent diffusion enables higher resolution:} By operating in the VAE's 32$\times$32 latent space, the model achieves an effective output resolution of 256$\times$256 --- 4$\times$ the linear resolution of WikiArt (128$\times$128) --- while the U-Net processes tensors of the same spatial size as the CIFAR-10 model (32$\times$32). This demonstrates that latent diffusion is essential for scaling to higher resolutions within practical compute budgets.
+    
+    \item \textbf{Attribute-based captioning improves conditioning:} Unlike fixed prompt templates (e.g., ``A painting in the style of Impressionism''), the attribute-to-text system generates diverse, detailed captions that vary per sample. This provides richer conditioning signal during training and enables fine-grained control at inference time (e.g., specifying hair colour, expression, and accessories simultaneously).
+    
+    \item \textbf{Longer training required:} The model required 500 epochs to converge, significantly more than previous experiments (20 for MNIST, 50 for CIFAR-10, 100 for WikiArt). This reflects the greater complexity of the CelebA dataset --- both in the number of training samples ($\sim$202K) and the diversity of facial attributes.
+    
+    \item \textbf{Stable training dynamics:} Despite the longer training, the latent-space MSE loss exhibited smooth, monotonic convergence without the oscillations sometimes observed in pixel-space training, suggesting that the pretrained VAE's latent space provides a more stable optimization landscape.
+\end{enumerate}

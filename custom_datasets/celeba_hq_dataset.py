@@ -136,89 +136,256 @@ class CelebAHQWithCaptions(Dataset):
         # Fallback: return empty dict
         return {}
     
+    # ------------------------------------------------------------------ #
+    #  Attribute → phrase mapping (with paraphrases for variety)          #
+    #  Phrases are written WITHOUT a leading "with" – the connector is   #
+    #  added once during assembly so captions read naturally.             #
+    # ------------------------------------------------------------------ #
+    _ATTRIBUTE_PHRASES = {
+        # Facial hair / stubble
+        "5_o_Clock_Shadow": ["light facial stubble", "a five o'clock shadow", "slight stubble"],
+        "No_Beard": ["a clean-shaven face"],
+        "Mustache": ["a mustache", "a moustache"],
+        "Goatee": ["a goatee"],
+        "Sideburns": ["sideburns"],
+        # Eyes / eyebrows
+        "Arched_Eyebrows": ["arched eyebrows", "curved eyebrows"],
+        "Bushy_Eyebrows": ["bushy eyebrows", "thick eyebrows"],
+        "Bags_Under_Eyes": ["bags under the eyes"],
+        "Narrow_Eyes": ["narrow eyes"],
+        # Nose (collision: Big_Nose vs Pointy_Nose – handled in assembly)
+        "Big_Nose": ["a large nose", "a big nose", "a prominent nose"],
+        "Pointy_Nose": ["a pointy nose", "a sharp nose"],
+        # Lips
+        "Big_Lips": ["full lips", "big lips"],
+        # Cheekbones / cheeks
+        "High_Cheekbones": ["high cheekbones", "prominent cheekbones"],
+        "Rosy_Cheeks": ["rosy cheeks", "flushed cheeks"],
+        # Face shape / build
+        "Chubby": ["a chubby face", "a round face", "a plump face"],
+        "Double_Chin": ["a double chin"],
+        "Oval_Face": ["an oval face"],
+        "Pale_Skin": ["pale skin", "fair skin", "light skin"],
+        # Hair colour (just the colour word; combined with "hair" in assembly)
+        "Blond_Hair": ["blond", "blonde"],
+        "Black_Hair": ["black"],
+        "Brown_Hair": ["brown"],
+        "Gray_Hair": ["gray", "grey"],
+        # Hair style (just the style word; combined with colour in assembly)
+        "Straight_Hair": ["straight"],
+        "Wavy_Hair": ["wavy"],
+        "Bangs": ["bangs"],
+        "Receding_Hairline": ["a receding hairline"],
+        "Bald": ["a bald head"],
+        # Accessories (standalone phrases)
+        "Eyeglasses": ["wearing eyeglasses", "wearing glasses"],
+        "Wearing_Hat": ["wearing a hat", "in a hat"],
+        "Wearing_Earrings": ["wearing earrings"],
+        "Wearing_Necklace": ["wearing a necklace"],
+        "Wearing_Necktie": ["wearing a necktie", "wearing a tie"],
+        # Makeup
+        "Heavy_Makeup": ["heavy makeup", "wearing heavy makeup"],
+        "Wearing_Lipstick": ["wearing lipstick"],
+        # Expression (standalone)
+        "Smiling": ["smiling"],
+        "Mouth_Slightly_Open": ["mouth slightly open", "with parted lips"],
+    }
+
+    # Minor facial features are included with this probability (for variety)
+    _MINOR_FEATURE_PROB = 0.80
+
+    # ----- helpers ---------------------------------------------------- #
+
+    def _phrase(self, attr_name):
+        """Return a random paraphrase for *attr_name*, or ``None``."""
+        phrases = self._ATTRIBUTE_PHRASES.get(attr_name)
+        return random.choice(phrases) if phrases else None
+
+    def _maybe_include(self, attr_name, attributes, prob=None):
+        """Return a phrase if *attr_name* is active and passes the random gate."""
+        if not attributes.get(attr_name, False):
+            return None
+        if random.random() > (prob if prob is not None else self._MINOR_FEATURE_PROB):
+            return None
+        return self._phrase(attr_name)
+
+    # ----- hair ------------------------------------------------------- #
+
+    def _build_hair_description(self, attributes):
+        """Build hair description, resolving colour collisions by priority."""
+        if attributes.get("Bald", False):
+            return [random.choice(["a bald head", "no hair"])]
+
+        # Colour – pick first match (resolves Black+Brown, etc.)
+        hair_colour = None
+        for attr in ("Blond_Hair", "Black_Hair", "Brown_Hair", "Gray_Hair"):
+            if attributes.get(attr, False):
+                hair_colour = self._phrase(attr)
+                break
+
+        # Style – resolve Straight vs Wavy (Straight wins)
+        style = None
+        if attributes.get("Straight_Hair", False):
+            style = self._phrase("Straight_Hair")
+        elif attributes.get("Wavy_Hair", False):
+            style = self._phrase("Wavy_Hair")
+
+        parts = []
+        hair_words = ([style] if style else []) + ([hair_colour] if hair_colour else [])
+        if hair_words:
+            parts.append(" ".join(hair_words) + " hair")
+
+        if attributes.get("Bangs", False):
+            parts.append("bangs")
+        if attributes.get("Receding_Hairline", False):
+            parts.append(self._phrase("Receding_Hairline"))
+
+        return parts  # may be empty
+
+    # ----- facial hair ------------------------------------------------ #
+
+    def _build_facial_hair_description(self, attributes):
+        """Build facial-hair description."""
+        parts = []
+        for attr in ("5_o_Clock_Shadow", "Mustache", "Goatee", "Sideburns"):
+            if attributes.get(attr, False):
+                parts.append(self._phrase(attr))
+
+        # "clean-shaven" only when No_Beard is active AND Male AND nothing else applies
+        if not parts and attributes.get("No_Beard", False) and attributes.get("Male", False):
+            return ["a clean-shaven face"]
+
+        return parts  # may be empty
+
+    # ----- main builder ----------------------------------------------- #
+
     def _build_caption(self, attributes):
         """
-        Build a natural language caption from attributes.
-        
-        Uses template-based generation with attribute-driven filling.
-        
-        Args:
-            attributes: Dict of attribute_name -> bool
-        
-        Returns:
-            Caption string
+        Build a natural-language caption from CelebA binary attributes.
+
+        Design principles
+        -----------------
+        1. **Deterministic mapping** – every active attribute has a fixed set
+           of paraphrases; one is chosen at random for variety.
+        2. **Never invent** – if an attribute is inactive it is silently
+           omitted.  No "no accessories" or "neutral expression" fillers.
+        3. **Collision resolution** – contradictory labels (e.g. Black_Hair
+           + Brown_Hair) are resolved with an explicit priority rule.
+        4. **Controlled randomness** – minor facial features may be dropped
+           ~20 % of the time to avoid overfitting to one phrasing.
+        5. **Core attributes always present** – gender, age, hair, expression,
+           accessories, and facial hair are never dropped.
+
+        Output structure
+        ----------------
+        ``"A photo of a <age> <gender> with <physical descriptors>, <expression>, <accessories>"``
         """
-        # Extract key attributes
+        # --- identity ------------------------------------------------- #
         is_male = attributes.get("Male", False)
-        is_young = attributes.get("Young", True)
-        is_smiling = attributes.get("Smiling", False)
-        has_glasses = attributes.get("Eyeglasses", False)
-        has_hat = attributes.get("Wearing_Hat", False)
-        
-        # Hair color (mutually exclusive in theory, but use first match)
-        hair_color = None
-        if attributes.get("Blond_Hair", False):
-            hair_color = "blond"
-        elif attributes.get("Black_Hair", False):
-            hair_color = "black"
-        elif attributes.get("Brown_Hair", False):
-            hair_color = "brown"
-        elif attributes.get("Gray_Hair", False):
-            hair_color = "gray"
-        
-        # Hair style
-        hair_style = []
-        if attributes.get("Wavy_Hair", False):
-            hair_style.append("wavy")
-        if attributes.get("Straight_Hair", False):
-            hair_style.append("straight")
-        if attributes.get("Bangs", False):
-            hair_style.append("with bangs")
-        
-        # Facial hair
-        facial_hair = []
-        if attributes.get("Mustache", False):
-            facial_hair.append("mustache")
-        if attributes.get("Goatee", False):
-            facial_hair.append("goatee")
-        if attributes.get("Sideburns", False):
-            facial_hair.append("sideburns")
-        
-        # Build attribute strings
-        gender = "man" if is_male else "woman"
-        age = "young" if is_young else "older"
-        expression = "smiling" if is_smiling else ""
-        
-        # Accessories
+        is_young = attributes.get("Young", False)
+
+        gender_word = "man" if is_male else "woman"
+        if is_young:
+            age_word = "young"
+            article = "a"
+        else:
+            # Young=0 means NOT young – do NOT hallucinate "older"/"middle-aged"
+            age_word = None
+            article = "a"
+
+        # Collect all physical descriptors (without leading "with")
+        descriptors = []
+
+        # --- hair (always) -------------------------------------------- #
+        descriptors.extend(self._build_hair_description(attributes))
+
+        # --- facial hair (always) ------------------------------------- #
+        descriptors.extend(self._build_facial_hair_description(attributes))
+
+        # --- face shape / skin (usually) ------------------------------ #
+        for attr in ("Chubby", "Double_Chin", "Pale_Skin"):
+            d = self._maybe_include(attr, attributes)
+            if d:
+                descriptors.append(d)
+        # Oval_Face only if NOT Chubby (contradictory)
+        if not attributes.get("Chubby", False):
+            d = self._maybe_include("Oval_Face", attributes)
+            if d:
+                descriptors.append(d)
+
+        # --- facial features (usually) -------------------------------- #
+        # Eyebrows – resolve Arched vs Bushy (Arched wins)
+        if attributes.get("Arched_Eyebrows", False):
+            d = self._maybe_include("Arched_Eyebrows", attributes)
+            if d:
+                descriptors.append(d)
+        elif attributes.get("Bushy_Eyebrows", False):
+            d = self._maybe_include("Bushy_Eyebrows", attributes)
+            if d:
+                descriptors.append(d)
+
+        for attr in ("Bags_Under_Eyes", "Narrow_Eyes", "High_Cheekbones", "Rosy_Cheeks"):
+            d = self._maybe_include(attr, attributes)
+            if d:
+                descriptors.append(d)
+
+        # Nose – resolve Big vs Pointy (Big wins)
+        if attributes.get("Big_Nose", False):
+            d = self._maybe_include("Big_Nose", attributes)
+            if d:
+                descriptors.append(d)
+        elif attributes.get("Pointy_Nose", False):
+            d = self._maybe_include("Pointy_Nose", attributes)
+            if d:
+                descriptors.append(d)
+
+        # Lips
+        d = self._maybe_include("Big_Lips", attributes)
+        if d:
+            descriptors.append(d)
+
+        # --- expression (always, if active) --------------------------- #
+        expression = []
+        if attributes.get("Smiling", False):
+            expression.append(self._phrase("Smiling"))
+        elif attributes.get("Mouth_Slightly_Open", False):
+            expression.append(self._phrase("Mouth_Slightly_Open"))
+
+        # --- accessories (always, if active) -------------------------- #
         accessories = []
-        if has_glasses:
-            accessories.append("wearing eyeglasses")
-        if has_hat:
-            accessories.append("wearing a hat")
-        
-        # Build hair description
-        hair_desc = []
-        if hair_color:
-            hair_desc.append(hair_color)
-        if hair_style:
-            hair_desc.extend(hair_style)
-        hair = " ".join(hair_desc) + " hair" if hair_desc else "hair"
-        
-        # Choose a template and fill it
-        template = random.choice(self.prompt_templates)
-        
-        # Fill template
-        caption = template.format(
-            age=age,
-            gender=gender,
-            expression=expression if expression else "with a neutral expression",
-            hair=hair,
-            accessories=", ".join(accessories) if accessories else "no accessories",
-        )
-        
-        # Clean up whitespace
+        for attr in ("Eyeglasses", "Wearing_Hat", "Wearing_Earrings",
+                      "Wearing_Necklace", "Wearing_Necktie"):
+            if attributes.get(attr, False):
+                accessories.append(self._phrase(attr))
+
+        # --- makeup (usually, if active) ------------------------------ #
+        # Heavy_Makeup wins over Wearing_Lipstick alone
+        if attributes.get("Heavy_Makeup", False):
+            d = self._maybe_include("Heavy_Makeup", attributes)
+            if d:
+                accessories.append(d)
+        elif attributes.get("Wearing_Lipstick", False):
+            d = self._maybe_include("Wearing_Lipstick", attributes)
+            if d:
+                accessories.append(d)
+
+        # --- assemble ------------------------------------------------- #
+        if age_word:
+            caption = f"A photo of {article} {age_word} {gender_word}"
+        else:
+            caption = f"A photo of {article} {gender_word}"
+
+        if descriptors:
+            caption += " with " + ", ".join(descriptors)
+
+        if expression:
+            caption += ", " + ", ".join(expression)
+
+        if accessories:
+            caption += ", " + ", ".join(accessories)
+
+        # Final cleanup
         caption = " ".join(caption.split())
-        
         return caption
     
     def __getitem__(self, idx):

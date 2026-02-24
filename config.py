@@ -9,6 +9,16 @@ def list_wikiart_unet_checkpoints() -> list[Path]:
         except Exception:
             return -1
     return sorted(checkpoints, key=extract_epoch)
+
+def list_celeba_ldm_unet_checkpoints() -> list[Path]:
+    """Return all CelebA LDM UNet checkpoints sorted by epoch (ascending)."""
+    checkpoints = list(CHECKPOINTS_DIR.glob(f"{UNET_CELEBA_LDM_CHECKPOINT_PREFIX}*.pt"))
+    def extract_epoch(path):
+        try:
+            return int(str(path).split("_")[-1].split(".")[0])
+        except Exception:
+            return -1
+    return sorted(checkpoints, key=extract_epoch)
 """
 Project Configuration
 
@@ -202,7 +212,7 @@ TRAIN_WIKIART_CONFIG = {
 
 # Training configuration for CelebA-HQ Latent Diffusion
 TRAIN_CELEBA_LDM_CONFIG = {
-    "num_epochs": 100,
+    "num_epochs": 500,
     "learning_rate": 1e-5,
     "batch_size": 128,  # Latent diffusion allows larger effective resolution
     "num_train_timesteps": 1000,
@@ -315,7 +325,7 @@ WIKIART_STYLES = [
 
 EXPERIMENT_3_CONFIG = {
     # Guidance scales to evaluate
-    "guidance_scales": [0, 5, 10, 15, 20, 30, 40, 50, 100],
+    "guidance_scales": [0, 1, 2, 3, 4, 5, 10, 20, 50],
     
     # Number of images per class per guidance scale
     "images_per_class": 100,
@@ -584,7 +594,24 @@ def get_latest_celeba_ldm_unet_checkpoint() -> Path:
     checkpoints = list(CHECKPOINTS_DIR.glob(f"{UNET_CELEBA_LDM_CHECKPOINT_PREFIX}*.pt"))
     if not checkpoints:
         raise FileNotFoundError(f"No CelebA LDM UNet checkpoints found in {CHECKPOINTS_DIR}")
-    return max(checkpoints, key=lambda x: int(str(x).split("_")[-1].split(".")[0]))
+    
+    # First check for "final" checkpoint
+    final_checkpoint = CHECKPOINTS_DIR / f"{UNET_CELEBA_LDM_CHECKPOINT_PREFIX}final.pt"
+    if final_checkpoint.exists():
+        return final_checkpoint
+    
+    # Otherwise, find the highest numeric epoch
+    def extract_epoch(path):
+        try:
+            return int(str(path).split("_")[-1].split(".")[0])
+        except (ValueError, IndexError):
+            return -1
+    
+    numeric_checkpoints = [ckpt for ckpt in checkpoints if extract_epoch(ckpt) >= 0]
+    if not numeric_checkpoints:
+        raise FileNotFoundError(f"No valid epoch checkpoints found in {CHECKPOINTS_DIR}")
+    
+    return max(numeric_checkpoints, key=extract_epoch)
 
 
 def get_celeba_classifier_checkpoint_path() -> Path:

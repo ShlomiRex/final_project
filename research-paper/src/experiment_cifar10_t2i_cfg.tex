@@ -158,13 +158,13 @@ Notably, higher guidance scales also tend to introduce more visual artifacts, su
     \label{fig:cifar10_samples_representative}
 \end{figure}
 
-\begin{table}[h]
+\begin{table}[H]
     \centering
     \caption{CIFAR-10 Generation Metrics Across Guidance Scales. Accuracy measures prompt adherence.}
     \label{tab:cifar10_metrics}
     \begin{tabular}{|c|c|c|}
         \hline
-        \textbf{Guidance Scale ($w$)} & \textbf{FID Score} $\downarrow$ & \textbf{Accuracy (\%)}$^{\ast}$ $\uparrow$ \\
+        \textbf{Guidance Scale ($w$)} & \textbf{FID Score} $\downarrow$ & \textbf{Accuracy (\%)}$\uparrow$ \footnotemark \\
         \hline
         0 (unconditional) & 77.05 & 9.10 \\
         \hline
@@ -175,7 +175,5 @@ Notably, higher guidance scales also tend to introduce more visual artifacts, su
         10 & 77.19 & \textbf{16.50} \\
         \hline
     \end{tabular}
-    
-    \vspace{0.5em}
-    \footnotesize{$^\ast$Accuracy is measured using a ResNet-18 classifier adapted from ImageNet but not fine-tuned on CIFAR-10. The classifier's first convolution and final layer were modified for 32$\times$32 images and 10 classes, but no additional training was performed. Thus, the absolute accuracy values are underestimated, but the relative trend shows that higher guidance scales yield better prompt adherence, as expected.}
 \end{table}
+\footnotetext{Accuracy is measured using a ResNet-18 classifier adapted from ImageNet but not fine-tuned on CIFAR-10. The classifier's first convolution and final layer were modified for 32$\times$32 images and 10 classes, but no additional training was performed. Thus, the absolute accuracy values are underestimated, but the relative trend shows that higher guidance scales yield better prompt adherence, as expected.}

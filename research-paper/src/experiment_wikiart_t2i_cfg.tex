@@ -1,20 +1,21 @@
 \subsection{WikiArt Text-to-Image Generation with Classifier-Free Guidance}
 
 \subsubsection{Objective}
-This experiment extends the text-to-image diffusion framework to the WikiArt dataset, a large-scale collection of fine art paintings spanning 27 distinct artistic styles. Unlike MNIST (28$\times$28 grayscale digits) and CIFAR-10 (32$\times$32 natural images), WikiArt presents significantly greater challenges: higher resolution (128$\times$128), complex artistic compositions, and subtle stylistic variations that require the model to learn nuanced visual features. The primary objective is to demonstrate that our CLIP-conditioned diffusion approach with classifier-free guidance can scale to higher-resolution, fine-grained artistic generation tasks, matching or exceeding the capabilities demonstrated in related work \cite{yagil2023can}.
+This experiment extends the text-to-image diffusion framework to the WikiArt dataset, a large-scale collection of fine art paintings spanning 27 distinct artistic styles. Unlike MNIST (28$\times$28 grayscale digits) and CIFAR-10 (32$\times$32 images of 10 classes), WikiArt presents significantly greater challenges: higher resolution (128$\times$128), complex artistic compositions, and subtle stylistic variations that require the model to learn nuanced visual features. The primary objective is to demonstrate that our CLIP-conditioned diffusion approach with classifier-free guidance can scale to higher-resolution, fine-grained artistic generation tasks, matching or exceeding the capabilities demonstrated in related work \cite{yagil2023can}.
+
+The work of Yagil et al.~\cite{yagil2023can} concluded by highlighting the potential of more advanced generative models, such as diffusion models, to further improve the fidelity and quality of generated artistic images. In this experiment, we directly address this open challenge by applying a diffusion-based framework to the WikiArt dataset. Our results empirically validate the hypothesis proposed in their future work section: diffusion models, when combined with powerful text encoders and classifier-free guidance, substantially enhance the realism and diversity of generated art compared to earlier approaches \footnote{Yagil et al.~\cite{yagil2023can} did not report quantitative metrics such as FID or IS, so direct comparison is not possible. In this work, we include such metrics to enable objective evaluation.}.
 
 \subsubsection{Dataset}
 
 \textbf{WikiArt Dataset (HuggingFace: huggan/wikiart):}
 \begin{itemize}
     \item \textbf{Training images:} $\sim$81,000 paintings
-    \item \textbf{Resolution:} Variable (resized to 128$\times$128 for training)
+    \item \textbf{Resolution:} Variable (average original resolution measured across 1000 sampled images: $1640 \times 1627$ pixels, we resized to 128$\times$128 for training)
     \item \textbf{Dataset size on disk:} $\sim$32 GB
     \item \textbf{Storage format:} 72 Apache Parquet files, each containing $\sim$1,100 samples
     \item \textbf{Classes:} 27 art styles:
     \begin{multicols}{3}
     \begin{enumerate}
-        \setcounter{enumi}{-1}
         \item Abstract Expressionism
         \item Action Painting
         \item Analytical Cubism
@@ -51,7 +52,7 @@ This experiment extends the text-to-image diffusion framework to the WikiArt dat
 \subsubsection{Dataset Loading Challenge and Solution}
 \label{sec:wikiart-dataloader}
 
-A significant engineering challenge emerged when loading the WikiArt dataset for training. The standard approach of using PyTorch's \texttt{DataLoader} with \texttt{shuffle=True} proved impractical for this large-scale dataset stored across multiple Parquet files.
+A significant engineering challenge emerged when loading the WikiArt dataset for training. The standard approach of using PyTorch's \texttt{DataLoader} with \texttt{shuffle=True} proved impractical for this large-scale dataset stored across multiple Parquet files \footnote{Parquet is a columnn data storage format that efficiently compresses and stores structured data.}.
 
 \textbf{The Problem:}
 
@@ -234,8 +235,6 @@ We conducted GPU memory profiling to determine the maximum feasible batch size:
 
 \begin{enumerate}
     \item Measured peak GPU memory usage with batch size 16: $\sim$8 GB / 80 GB (10\% utilization)
-    \item Estimated memory per sample: 512 MB
-    \item Calculated maximum batch size with 2 GB safety margin: 76 samples
     \item Selected batch size 64 (power of 2) for optimal GPU memory alignment and stability
 \end{enumerate}
 
