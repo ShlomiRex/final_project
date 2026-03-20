@@ -27,3 +27,5 @@ slurm/logs/
 notebooks/.ipynb_checkpoints/
 research-paper/src/main.synctex.gz
 outputs/
+research-paper/src/%OUTDIR%/main.toc
+notebooks/04_celeba_hq_experiment/.ipynb_checkpoints/*
