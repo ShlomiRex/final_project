@@ -1,55 +1,71 @@
-\contentsline {section}{List of Tables}{2}{Doc-Start}%
-\contentsline {section}{\numberline {1}Introduction}{4}{section.1}%
-\contentsline {section}{\numberline {2}Related Work}{4}{section.2}%
-\contentsline {subsection}{\numberline {2.1}Generative Adversarial Networks for Image Generation}{4}{subsection.2.1}%
-\contentsline {subsection}{\numberline {2.2}Creative Adversarial Networks and Interactive Evolution}{4}{subsection.2.2}%
-\contentsline {subsection}{\numberline {2.3}Diffusion Models for Image Synthesis}{5}{subsection.2.3}%
-\contentsline {subsection}{\numberline {2.4}Text-Conditioned Image Generation}{5}{subsection.2.4}%
-\contentsline {subsection}{\numberline {2.5}Gaps and Contributions}{5}{subsection.2.5}%
-\contentsline {section}{\numberline {3}Experiments}{5}{section.3}%
-\contentsline {subsection}{\numberline {3.1}Experimental Setup}{5}{subsection.3.1}%
-\contentsline {subsubsection}{\numberline {3.1.1}Hardware Environment}{5}{subsubsection.3.1.1}%
-\contentsline {subsubsection}{\numberline {3.1.2}Software Environment}{5}{subsubsection.3.1.2}%
-\contentsline {subsubsection}{\numberline {3.1.3}Distributed Training Considerations}{6}{subsubsection.3.1.3}%
-\contentsline {subsection}{\numberline {3.2}MNIST Text-to-Image Generation with Classifier-Free Guidance}{6}{subsection.3.2}%
-\contentsline {subsubsection}{\numberline {3.2.1}Objective}{6}{subsubsection.3.2.1}%
-\contentsline {subsubsection}{\numberline {3.2.2}Model Architecture}{6}{subsubsection.3.2.2}%
-\contentsline {subsubsection}{\numberline {3.2.3}Dataset}{7}{subsubsection.3.2.3}%
-\contentsline {subsubsection}{\numberline {3.2.4}Training Configuration}{7}{subsubsection.3.2.4}%
-\contentsline {subsubsection}{\numberline {3.2.5}Inference and Classifier-Free Guidance}{7}{subsubsection.3.2.5}%
-\contentsline {subsubsection}{\numberline {3.2.6}Results and Analysis}{8}{subsubsection.3.2.6}%
-\contentsline {subsubsection}{\numberline {3.2.7}Key Findings}{10}{subsubsection.3.2.7}%
-\contentsline {subsection}{\numberline {3.3}CIFAR-10 Text-to-Image Generation with Classifier-Free Guidance}{10}{subsection.3.3}%
-\contentsline {subsubsection}{\numberline {3.3.1}Objective}{10}{subsubsection.3.3.1}%
-\contentsline {subsubsection}{\numberline {3.3.2}Model Architecture}{10}{subsubsection.3.3.2}%
-\contentsline {subsubsection}{\numberline {3.3.3}Dataset}{11}{subsubsection.3.3.3}%
-\contentsline {subsubsection}{\numberline {3.3.4}Training Configuration}{11}{subsubsection.3.3.4}%
-\contentsline {subsubsection}{\numberline {3.3.5}Inference Configuration}{12}{subsubsection.3.3.5}%
-\contentsline {subsubsection}{\numberline {3.3.6}Evaluation Metrics}{12}{subsubsection.3.3.6}%
-\contentsline {subsubsection}{\numberline {3.3.7}Results}{12}{subsubsection.3.3.7}%
-\contentsline {subsection}{\numberline {3.4}WikiArt Text-to-Image Generation with Classifier-Free Guidance}{13}{subsection.3.4}%
-\contentsline {subsubsection}{\numberline {3.4.1}Objective}{13}{subsubsection.3.4.1}%
-\contentsline {subsubsection}{\numberline {3.4.2}Dataset}{13}{subsubsection.3.4.2}%
-\contentsline {subsubsection}{\numberline {3.4.3}Dataset Loading Challenge and Solution}{14}{subsubsection.3.4.3}%
-\contentsline {subsubsection}{\numberline {3.4.4}Model Architecture}{14}{subsubsection.3.4.4}%
-\contentsline {subsubsection}{\numberline {3.4.5}Training Configuration}{15}{subsubsection.3.4.5}%
-\contentsline {subsubsection}{\numberline {3.4.6}Training Pipeline}{15}{subsubsection.3.4.6}%
-\contentsline {subsubsection}{\numberline {3.4.7}Training Performance Optimization}{15}{subsubsection.3.4.7}%
-\contentsline {subsubsection}{\numberline {3.4.8}Comparison Across Experiments}{16}{subsubsection.3.4.8}%
-\contentsline {subsection}{\numberline {3.5}CelebA Latent Diffusion with Classifier-Free Guidance}{17}{subsection.3.5}%
-\contentsline {subsubsection}{\numberline {3.5.1}Objective}{17}{subsubsection.3.5.1}%
-\contentsline {subsubsection}{\numberline {3.5.2}Dataset}{17}{subsubsection.3.5.2}%
-\contentsline {subsubsection}{\numberline {3.5.3}Attribute-to-Text Caption Generation}{17}{subsubsection.3.5.3}%
-\contentsline {subsubsection}{\numberline {3.5.4}Latent Diffusion Architecture}{18}{subsubsection.3.5.4}%
-\contentsline {paragraph}{Why 4 Latent Channels Instead of 3?}{18}{section*.1}%
-\contentsline {subsubsection}{\numberline {3.5.5}Model Architecture}{19}{subsubsection.3.5.5}%
-\contentsline {subsubsection}{\numberline {3.5.6}Training Configuration}{20}{subsubsection.3.5.6}%
-\contentsline {subsubsection}{\numberline {3.5.7}Training Pipeline}{20}{subsubsection.3.5.7}%
-\contentsline {subsubsection}{\numberline {3.5.8}Inference Pipeline}{20}{subsubsection.3.5.8}%
-\contentsline {subsubsection}{\numberline {3.5.9}Results}{21}{subsubsection.3.5.9}%
-\contentsline {subsubsection}{\numberline {3.5.10}Comparison Across All Experiments}{21}{subsubsection.3.5.10}%
-\contentsline {subsubsection}{\numberline {3.5.11}Key Observations}{21}{subsubsection.3.5.11}%
-\contentsline {section}{\numberline {4}Comparative Analysis and Key Findings}{22}{section.4}%
-\contentsline {subsection}{\numberline {4.1}Comparison of MNIST and CIFAR-10 Experiments}{22}{subsection.4.1}%
-\contentsline {section}{\numberline {5}Discussion}{22}{section.5}%
-\contentsline {section}{\numberline {6}Conclusion}{22}{section.6}%
+\contentsline {section}{List of Tables}{3}{Doc-Start}%
+\contentsline {section}{\numberline {1}Introduction}{5}{section.1}%
+\contentsline {section}{\numberline {2}Related Work}{5}{section.2}%
+\contentsline {subsection}{\numberline {2.1}Generative Adversarial Networks for Image Generation}{5}{subsection.2.1}%
+\contentsline {subsection}{\numberline {2.2}Creative Adversarial Networks and Interactive Evolution}{5}{subsection.2.2}%
+\contentsline {subsection}{\numberline {2.3}Diffusion Models for Image Synthesis}{6}{subsection.2.3}%
+\contentsline {subsection}{\numberline {2.4}Text-Conditioned Image Generation}{6}{subsection.2.4}%
+\contentsline {subsection}{\numberline {2.5}Gaps and Contributions}{6}{subsection.2.5}%
+\contentsline {section}{\numberline {3}Experiments}{6}{section.3}%
+\contentsline {subsection}{\numberline {3.1}Experimental Setup}{6}{subsection.3.1}%
+\contentsline {subsubsection}{\numberline {3.1.1}Hardware Environment}{6}{subsubsection.3.1.1}%
+\contentsline {subsubsection}{\numberline {3.1.2}Software Environment}{6}{subsubsection.3.1.2}%
+\contentsline {subsubsection}{\numberline {3.1.3}Distributed Training Considerations}{7}{subsubsection.3.1.3}%
+\contentsline {subsection}{\numberline {3.2}MNIST Text-to-Image Generation with Classifier-Free Guidance}{7}{subsection.3.2}%
+\contentsline {subsubsection}{\numberline {3.2.1}Objective}{7}{subsubsection.3.2.1}%
+\contentsline {subsubsection}{\numberline {3.2.2}Model Architecture}{7}{subsubsection.3.2.2}%
+\contentsline {subsubsection}{\numberline {3.2.3}Dataset}{8}{subsubsection.3.2.3}%
+\contentsline {subsubsection}{\numberline {3.2.4}Training Configuration}{8}{subsubsection.3.2.4}%
+\contentsline {subsubsection}{\numberline {3.2.5}Inference and Classifier-Free Guidance}{8}{subsubsection.3.2.5}%
+\contentsline {subsubsection}{\numberline {3.2.6}Results and Analysis}{9}{subsubsection.3.2.6}%
+\contentsline {subsubsection}{\numberline {3.2.7}Key Findings}{11}{subsubsection.3.2.7}%
+\contentsline {subsection}{\numberline {3.3}CIFAR-10 Text-to-Image Generation with Classifier-Free Guidance}{11}{subsection.3.3}%
+\contentsline {subsubsection}{\numberline {3.3.1}Objective}{11}{subsubsection.3.3.1}%
+\contentsline {subsubsection}{\numberline {3.3.2}Model Architecture}{11}{subsubsection.3.3.2}%
+\contentsline {subsubsection}{\numberline {3.3.3}Dataset}{12}{subsubsection.3.3.3}%
+\contentsline {subsubsection}{\numberline {3.3.4}Training Configuration}{12}{subsubsection.3.3.4}%
+\contentsline {subsubsection}{\numberline {3.3.5}Inference Configuration}{13}{subsubsection.3.3.5}%
+\contentsline {subsubsection}{\numberline {3.3.6}Evaluation Metrics}{13}{subsubsection.3.3.6}%
+\contentsline {subsubsection}{\numberline {3.3.7}Results}{13}{subsubsection.3.3.7}%
+\contentsline {subsection}{\numberline {3.4}WikiArt Text-to-Image Generation with Classifier-Free Guidance}{14}{subsection.3.4}%
+\contentsline {subsubsection}{\numberline {3.4.1}Objective}{14}{subsubsection.3.4.1}%
+\contentsline {subsubsection}{\numberline {3.4.2}Dataset}{14}{subsubsection.3.4.2}%
+\contentsline {subsubsection}{\numberline {3.4.3}Dataset Loading Challenge and Solution}{15}{subsubsection.3.4.3}%
+\contentsline {subsubsection}{\numberline {3.4.4}Model Architecture}{15}{subsubsection.3.4.4}%
+\contentsline {subsubsection}{\numberline {3.4.5}Training Configuration}{16}{subsubsection.3.4.5}%
+\contentsline {subsubsection}{\numberline {3.4.6}Training Pipeline}{16}{subsubsection.3.4.6}%
+\contentsline {subsubsection}{\numberline {3.4.7}Training Performance Optimization}{16}{subsubsection.3.4.7}%
+\contentsline {subsubsection}{\numberline {3.4.8}Guidance Scale Search}{17}{subsubsection.3.4.8}%
+\contentsline {paragraph}{Experimental protocol.}{17}{section*.1}%
+\contentsline {paragraph}{Findings.}{18}{section*.2}%
+\contentsline {paragraph}{Visual guidance scale comparison.}{18}{section*.3}%
+\contentsline {subsubsection}{\numberline {3.4.9}Inference Steps Search}{19}{subsubsection.3.4.9}%
+\contentsline {paragraph}{Findings.}{20}{section*.4}%
+\contentsline {paragraph}{Visual confirmation.}{20}{section*.5}%
+\contentsline {subsubsection}{\numberline {3.4.10}WikiArt Generation Results}{21}{subsubsection.3.4.10}%
+\contentsline {subsection}{\numberline {3.5}CelebA Latent Diffusion with Classifier-Free Guidance}{22}{subsection.3.5}%
+\contentsline {subsubsection}{\numberline {3.5.1}Objective}{22}{subsubsection.3.5.1}%
+\contentsline {subsubsection}{\numberline {3.5.2}Dataset}{23}{subsubsection.3.5.2}%
+\contentsline {subsubsection}{\numberline {3.5.3}Attribute-to-Text Caption Generation}{24}{subsubsection.3.5.3}%
+\contentsline {subsubsection}{\numberline {3.5.4}Latent Diffusion Architecture}{25}{subsubsection.3.5.4}%
+\contentsline {paragraph}{Why 4 Latent Channels Instead of 3?}{25}{section*.6}%
+\contentsline {subsubsection}{\numberline {3.5.5}Model Architecture}{27}{subsubsection.3.5.5}%
+\contentsline {subsubsection}{\numberline {3.5.6}Training Configuration}{27}{subsubsection.3.5.6}%
+\contentsline {subsubsection}{\numberline {3.5.7}Training Pipeline}{28}{subsubsection.3.5.7}%
+\contentsline {subsubsection}{\numberline {3.5.8}Inference Pipeline}{28}{subsubsection.3.5.8}%
+\contentsline {subsubsection}{\numberline {3.5.9}Results}{28}{subsubsection.3.5.9}%
+\contentsline {paragraph}{Training Convergence}{28}{section*.7}%
+\contentsline {paragraph}{Qualitative Evaluation}{29}{section*.8}%
+\contentsline {subparagraph}{Inference Steps}{29}{section*.9}%
+\contentsline {subparagraph}{Guidance Scale}{29}{section*.10}%
+\contentsline {subparagraph}{Attribute Control --- Gender and Hair Color}{29}{section*.11}%
+\contentsline {subsubsection}{\numberline {3.5.10}Key Observations}{30}{subsubsection.3.5.10}%
+\contentsline {section}{\numberline {4}Comparative Analysis and Key Findings}{30}{section.4}%
+\contentsline {subsection}{\numberline {4.1}Configuration Comparison}{30}{subsection.4.1}%
+\contentsline {subsection}{\numberline {4.2}Scaling Trends}{31}{subsection.4.2}%
+\contentsline {subsection}{\numberline {4.3}Prompt Conditioning Strategies}{31}{subsection.4.3}%
+\contentsline {subsection}{\numberline {4.4}Pixel-Space vs.\ Latent-Space Diffusion}{32}{subsection.4.4}%
+\contentsline {subsection}{\numberline {4.5}Classifier-Free Guidance Across Experiments}{32}{subsection.4.5}%
+\contentsline {subsection}{\numberline {4.6}Engineering Challenges at Scale}{32}{subsection.4.6}%
+\contentsline {subsection}{\numberline {4.7}Key Takeaways}{33}{subsection.4.7}%
+\contentsline {section}{\numberline {5}Conclusion}{33}{section.5}%

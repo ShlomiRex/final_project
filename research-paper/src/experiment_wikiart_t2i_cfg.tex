@@ -3,7 +3,7 @@
 \subsubsection{Objective}
 This experiment extends the text-to-image diffusion framework to the WikiArt dataset, a large-scale collection of fine art paintings spanning 27 distinct artistic styles. Unlike MNIST (28$\times$28 grayscale digits) and CIFAR-10 (32$\times$32 images of 10 classes), WikiArt presents significantly greater challenges: higher resolution (128$\times$128), complex artistic compositions, and subtle stylistic variations that require the model to learn nuanced visual features. The primary objective is to demonstrate that our CLIP-conditioned diffusion approach with classifier-free guidance can scale to higher-resolution, fine-grained artistic generation tasks, matching or exceeding the capabilities demonstrated in related work \cite{yagil2023can}.
 
-The work of Yagil et al.~\cite{yagil2023can} concluded by highlighting the potential of more advanced generative models, such as diffusion models, to further improve the fidelity and quality of generated artistic images. In this experiment, we directly address this open challenge by applying a diffusion-based framework to the WikiArt dataset. Our results empirically validate the hypothesis proposed in their future work section: diffusion models, when combined with powerful text encoders and classifier-free guidance, substantially enhance the realism and diversity of generated art compared to earlier approaches \footnote{Yagil et al.~\cite{yagil2023can} did not report quantitative metrics such as FID or IS, so direct comparison is not possible. In this work, we include such metrics to enable objective evaluation.}.
+The work of Yagil et al.~\cite{yagil2023can} concluded by highlighting the potential of more advanced generative models, such as diffusion models, to further improve the fidelity and quality of generated artistic images. In this experiment, we directly address this open challenge by applying a diffusion-based framework to the WikiArt dataset. Our results empirically validate the hypothesis proposed in their future work section: diffusion models, when combined with powerful text encoders and classifier-free guidance, substantially enhance the realism and diversity of generated art compared to earlier approaches \footnote{Yagil et al.~\cite{yagil2023can} did not report quantitative metrics such as FID or CLIP scores, so direct comparison is not possible. In this work, we include such metrics to enable objective evaluation.}.
 
 \subsubsection{Dataset}
 
@@ -131,9 +131,8 @@ The file-sequential approach sacrifices global shuffling for practical training 
 
 \begin{itemize}
     \item File order is randomized each epoch, providing inter-epoch diversity
-    \item Similar approaches are used in production systems (WebDataset, TensorFlow Datasets)
-    \item Training convergence was not noticeably affected in practice
-    \item The 20--100$\times$ speedup enables practical iteration during development
+    \item Similar approaches are used in production systems (WebDataset, TensorFlow Datasets)\footnote{WebDataset is a Python library that treats large datasets as sharded tar archives; our file-sequential iterator emulates the same high-level streaming/shuffling idea.}
+    \item The 20--100$\times$ speedup enables practical iteration during development and training
 \end{itemize}
 
 \subsubsection{Model Architecture}
@@ -197,7 +196,7 @@ To ensure efficient use of computational resources, we conducted a detailed perf
 
 \textbf{Initial Performance Analysis:}
 
-We instrumented the training loop to measure the time spent in each stage of a single training iteration with an initial batch size of 16. The breakdown revealed:
+We instrumented the training loop to measure the time spent in each stage of a single training iteration with an initial batch size of 16. The breakdown revealed (see Table~\ref{tab:wikiart-bottleneck}):
 
 \begin{table}[htbp]
 \centering
@@ -258,33 +257,131 @@ Increasing the batch size from 16 to 64 provided a 4$\times$ increase in through
 
 This optimization reduced the total training time for 100 epochs from approximately 15.4 days to 4.1 days, making the experiment practical to execute on available hardware.
 
-\subsubsection{Comparison Across Experiments}
+\subsubsection{Guidance Scale Search}
+\label{sec:wikiart-guidance-search}
 
-Table~\ref{tab:experiment-comparison} summarizes the key differences across all three experiments.
+A key hyperparameter in classifier-free guidance is the guidance scale $w$, which controls the
+trade-off between image quality and diversity.  We conducted a systematic search over ten values:
+$w \in \{0, 1, 2, 3, 5, 7.5, 10, 12.5, 15, 20\}$, evaluating each with two complementary metrics:
+CLIP Score (text-image alignment) and Fr\'{e}chet Inception Distance. A composite score $\hat{\text{CLIP}} - \hat{\text{FID}}$ (both min-max
+normalised) is used to select a single recommended guidance scale\footnote{%
+  Min-max normalisation: $\hat{x} = (x - x_{\min})/(x_{\max} - x_{\min})$, mapping each metric to $[0,1]$.}.
 
-\begin{table}[htbp]
+\paragraph{Experimental protocol.}
+For each value of $w$, we generated one image per art style (27 images total) using the
+same random seed across all runs, so that the only difference between runs is the guidance
+scale. Each generated image was scored against its text prompt (CLIP) and compared to
+200 real WikiArt images of the same style (FID), giving $27 \times 200 = 5{,}400$ reference
+images in total.
+
+\begin{figure}[H]
 \centering
-\small
-\begin{tabular}{lccc}
-\toprule
-\textbf{Aspect} & \textbf{MNIST} & \textbf{CIFAR-10} & \textbf{WikiArt} \\
-\midrule
-Resolution & 28$\times$28 & 32$\times$32 & 128$\times$128 \\
-Channels & 1 (grayscale) & 3 (RGB) & 3 (RGB) \\
-Classes & 10 digits & 10 objects & 27 styles \\
-Training samples & 60,000 & 50,000 & $\sim$81,000 \\
-Dataset size & $\sim$50 MB & $\sim$170 MB & $\sim$32 GB \\
-U-Net blocks & 4 & 4 & 5 \\
-Parameters & $\sim$25M & $\sim$45M & $\sim$150M \\
-Batch size & 256 & 128 & 64 \\
-Learning rate & $10^{-4}$ & $10^{-4}$ & $10^{-5}$ \\
-Epochs & 20 & 50 & 100 \\
-\bottomrule
-\end{tabular}
-\caption{Comparison of experimental configurations across MNIST, CIFAR-10, and WikiArt datasets.}
-\label{tab:experiment-comparison}
-\end{table}
+\includegraphics[width=0.75\textwidth,keepaspectratio]{../figures/experiments/experiment_3/metrics_vs_guidance_scale.png}
+\caption{Guidance scale search across all 27 WikiArt styles: CLIP Score (top), FID (bottom), and
+composite score $\hat{\text{CLIP}} - \hat{\text{FID}}$ (both min-max normalised) as functions of
+CFG weight $w \in \{0, 1, 2, 3, 5, 7.5, 10, 12.5, 15, 20\}$.  Best values per metric are at
+$w = 1.0$ (CLIP\,=\,0.2548, composite\,=\,0.468) and $w = 3.0$ (FID\,=\,259.1).  The dashed
+vertical line marks the recommended value $w = 1.0$ selected by the composite criterion.}
+\label{fig:wikiart-metrics-guidance}
+\end{figure}
 
-% Results section to be added after training completes
-% \subsubsection{Results}
-% TODO: Add training curves, generated samples, and FID scores after training
+\paragraph{Findings.}
+Several observations are notable:
+
+\begin{itemize}
+    \item \textbf{Low guidance scales win.}  The composite score peaks at $w = 1.0$ and
+          decreases monotonically beyond $w \approx 3$. The result suggests that after
+          100 training epochs the text conditioning signal is still
+          relatively weak; amplifying it aggressively with high $w$ therefore introduces
+          artifacts rather than sharper style adherence.
+    \item \textbf{FID favours $w = 3$.}  The lowest FID (259.1) is achieved at $w = 3$,
+          meaning moderate conditioning produces images closest to the real WikiArt distribution.
+          However, the gap between $w = 1$ (FID 262.4) and $w = 3$ is small (\textless 2\%).
+    \item \textbf{CLIP scores are compressed.}  The CLIP score range is narrow
+          (0.248-0.255), indicating that our 128$\times$128 model produces images that are
+          similarly (weakly) aligned with their text prompts across all guidance scales.
+          Further training or a latent diffusion approach would likely widen this gap.
+\end{itemize}
+
+\paragraph{Visual guidance scale comparison.}
+Figure~\ref{fig:wikiart-visual-grid} shows a representative subset of six art styles across all
+ten guidance scales.
+
+A notable observation is that the generated images look \emph{visually similar} across a wide
+range of guidance scales - roughly $w \in [0, 10]$ — with differences only becoming pronounced
+at extreme values.  This behaviour is a direct consequence of the prompt structure used in this
+experiment.  Each prompt encodes only a coarse art-style label, e.g.\
+\textit{``A painting in the style of Impressionism''}.  Such a prompt does not specify
+compositional attributes (subject matter, colour palette, spatial layout), so there is little
+additional information for the CFG mechanism to amplify: the model's conditional distribution
+already captures the style class, and scaling the guidance vector beyond the unconditioned
+baseline does not steer generation toward meaningfully different content.
+
+By contrast, richer prompts - such as \textit{``Young female smiling with blond hair''} in
+Experiment 4 (\S\ref{sec:celeba-caption-generation}) show this more clearly.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth,keepaspectratio]{../figures/experiments/experiment_3/visual_grid_guidance_vs_style.png}
+\caption{Visual grid of generated WikiArt images. Rows correspond to six representative art
+styles; columns correspond to guidance scales $w \in \{0, 1, 2, 3, 5, 7.5, 10, 12.5, 15, 20\}$. Images remain visually consistent across $w \in [0, 10]$;
+Only at $w \geq 12.5$ do oversaturation and textural artefacts become apparent.}
+\label{fig:wikiart-visual-grid}
+\end{figure}
+
+% ──────────────────────────────────────────────────────────────────────────────
+\subsubsection{Inference Steps Search}
+\label{sec:wikiart-inference-steps}
+
+A second key inference hyperparameter is the number of DDPM denoising steps.
+More steps refine the denoised image further but increase inference time linearly.
+We swept $T \in \{1, 5, 10, 20, 50, 100, 200, 250, 300, 350\}$ with all other
+parameters fixed ($w = 1.0$, seed $= 42$, prompt ``A painting in the style of
+Impressionism'') and measured two complementary metrics:
+
+\begin{itemize}
+    \item \textbf{CLIP Score} — cosine similarity between the generated image and the text
+          prompt in CLIP embedding space (primary criterion, $\uparrow$ better).
+    \item \textbf{FID} — Fr\'{e}chet Inception Distance between 20 generated images and 50
+          real Impressionism images from the WikiArt dataset ($\downarrow$ lower is better).
+\end{itemize}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.85\textwidth,keepaspectratio]{../figures/experiments/experiment_3/metrics_vs_steps.png}
+\caption{CLIP Score (top) and FID (bottom) as functions of the number of DDPM
+inference steps $T_{\text{inf}} \in \{1, 5, 10, 20, 50, 100, 200, 250, 300, 350\}$.}
+\label{fig:wikiart-metrics-steps}
+\end{figure}
+
+\paragraph{Findings.}
+In the low-step regime (1--20), outputs are clearly under-denoised and both metrics are unstable.  At the opposite extreme (250--350), we observe over-denoising failure modes; correspondingly, CLIP/FID values at these endpoints can be misleading and should not be treated as evidence of better perceptual quality.
+
+\paragraph{Visual confirmation.}
+Figure~\ref{fig:wikiart-steps-multi} shows a $6 \times 10$ grid spanning six art styles
+and all ten step counts.  Images at 1--5 steps are visibly noisy; from 50 steps onward
+the style is clearly recognisable; columns beyond 100 steps are nearly
+indistinguishable to the naked eye, consistent with the metric curves above.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth,keepaspectratio]{../figures/experiments/experiment_3/inference_steps_sweep_multi_styles.png}
+\caption{Inference steps sweep across six art styles (rows) and ten step counts (columns):
+$T_{\text{inf}} \in \{1, 5, 10, 20, 50, 100, 200, 250, 300, 350\}$.
+Each row uses a unique seed so rows are visually distinct.}
+\label{fig:wikiart-steps-multi}
+\end{figure}
+
+% ──────────────────────────────────────────────────────────────────────────────
+\subsubsection{WikiArt Generation Results}
+\label{sec:wikiart-best-results}
+
+Figure~\ref{fig:wikiart-best-all-styles} presents one generated image for each of the 27
+WikiArt styles at the recommended guidance scale $w = 1.0$ and inference steps ($T = 100$).
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth,keepaspectratio]{../figures/experiments/experiment_3/best_guidance_w1.0_all_styles.png}
+\caption{Generated images for all 27 WikiArt art styles at the optimal guidance scale $w = 1.0$ and inference steps ($T = 100$).}
+\label{fig:wikiart-best-all-styles}
+\end{figure}

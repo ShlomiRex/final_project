@@ -20,6 +20,30 @@
 % Float package for better figure placement
 \usepackage{float}
 
+% Code blocks with Python syntax highlighting
+\usepackage{listings}
+\lstdefinestyle{pythonstyle}{
+    language=Python,
+    backgroundcolor=\color{gray!10},
+    basicstyle=\ttfamily\small,
+    keywordstyle=\color{blue!70!black}\bfseries,
+    commentstyle=\color{green!50!black}\itshape,
+    stringstyle=\color{orange!80!black},
+    numberstyle=\tiny\color{gray},
+    frame=single,
+    framesep=4pt,
+    rulecolor=\color{gray!40},
+    numbers=left,
+    numbersep=8pt,
+    breaklines=true,
+    showstringspaces=false,
+    tabsize=4,
+    captionpos=b,
+    aboveskip=0.8em,
+    belowskip=0.8em,
+}
+\lstset{style=pythonstyle}
+
 % Reduce spacing between paragraphs and list items
 \setlength{\parskip}{0.3em}
 \setlist{itemsep=0.0em, parsep=0em}
@@ -85,7 +109,6 @@
 \input{related_work}
 % \input{methodology}
 \input{experiments}
-\input{discussion}
 \input{conclusion}
 
 \bibliographystyle{plain}

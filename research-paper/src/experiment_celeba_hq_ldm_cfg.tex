@@ -7,6 +7,13 @@ The primary objectives are: (1) to demonstrate that latent diffusion substantial
 
 \subsubsection{Dataset}
 
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth,keepaspectratio]{../figures/experiments/experiment_4/training_dataset.png}
+    \caption[CelebA dataset sample images]{Sample images from the CelebA training dataset. The dataset contains $\sim$202,599 celebrity face photographs, resized to 256$\times$256 pixels for training.}
+    \label{fig:celeba_dataset_samples}
+\end{figure}
+
 \textbf{CelebA Dataset (HuggingFace: flwrlabs/celeba):}
 \begin{itemize}
     \item \textbf{Training images:} $\sim$202,599 celebrity face photographs
@@ -118,7 +125,7 @@ The number of latent channels in an autoencoder is a hyperparameter chosen durin
 
 During training, each image is encoded to a 4-channel latent tensor before the diffusion process begins. The VAE's encoder outputs a posterior distribution, from which we sample latents and scale them by the standard Stable Diffusion scaling factor (0.18215):
 
-\begin{verbatim}
+\begin{lstlisting}[language=Python, caption={VAE encoder (\texttt{models/vae\_wrapper.py})}]
 # From models/vae_wrapper.py
 def encode(self, images: torch.Tensor) -> torch.Tensor:
     """
@@ -133,28 +140,28 @@ def encode(self, images: torch.Tensor) -> torch.Tensor:
         latents = posterior.sample()
         latents = latents * self.scale_factor  # 0.18215
     return latents
-\end{verbatim}
+\end{lstlisting}
 
 During training, this encoding happens at the start of each batch, before noise is added:
 
-\begin{verbatim}
+\begin{lstlisting}[language=Python, caption={Training loop --- latent encoding per batch}]
 # Training loop (from train3_t2i_celeba_hq_ldm_cfg_500epochs.ipynb)
 for images, attributes in dataloader:
     images = images.to(device)  # [B, 3, 256, 256]
-    
+
     # Encode to latent space
     latents = vae.encode(images)  # [B, 4, 32, 32]
-    
+
     # Now train diffusion model on latents (not pixels)
     noise = torch.randn_like(latents)
     timesteps = torch.randint(0, 1000, (B,))
     noisy_latents = scheduler.add_noise(latents, noise, timesteps)
     ...
-\end{verbatim}
+\end{lstlisting}
 
 At inference time, the reverse process applies: the U-Net denoises random latents, and the VAE decoder converts the final denoised latents back to 3-channel RGB images:
 
-\begin{verbatim}
+\begin{lstlisting}[language=Python, caption={VAE decoder used at inference time}]
 # Inference decoding
 def decode(self, latents: torch.Tensor) -> torch.Tensor:
     """
@@ -168,11 +175,11 @@ def decode(self, latents: torch.Tensor) -> torch.Tensor:
         latents = latents / self.scale_factor  # Unscale
         images = self.vae.decode(latents).sample
     return images
-\end{verbatim}
+\end{lstlisting}
 
 This architecture allows the U-Net to operate on 32$\times$32$\times$4 tensors (4,096 elements per latent) rather than 256$\times$256$\times$3 tensors (196,608 elements per image) --- a 48$\times$ reduction in the number of elements processed by the diffusion model, leading to dramatic computational savings.
 
-The latent diffusion pipeline operates as follows:
+The latent diffusion pipeline operates as follows (Figure~\ref{fig:ldm_architecture}):
 
 \begin{enumerate}
     \item \textbf{Encoding (training only):} Images $\mathbf{x} \in \mathbb{R}^{3 \times 256 \times 256}$ are encoded to latents $\mathbf{z} = \text{VAE}_{\text{enc}}(\mathbf{x}) \in \mathbb{R}^{4 \times 32 \times 32}$
@@ -180,29 +187,12 @@ The latent diffusion pipeline operates as follows:
     \item \textbf{Decoding (inference only):} Denoised latents are decoded back to pixel space $\hat{\mathbf{x}} = \text{VAE}_{\text{dec}}(\hat{\mathbf{z}}) \in \mathbb{R}^{3 \times 256 \times 256}$
 \end{enumerate}
 
-\begin{figure}[]
+\begin{figure}[H]
     \centering
     \includegraphics[width=0.9\textwidth,keepaspectratio]{../figures/stable_diffusion.png}
     \caption[Architecture of Latent Diffusion Models]{Architecture of Latent Diffusion Models (LDMs). The model operates in a compressed latent space produced by a pretrained VAE encoder. During training, images are first encoded to latents, noise is added and predicted in latent space, and the denoised latents are decoded back to pixel space. This approach enables high-resolution generation (256$\times$256) while maintaining computational efficiency compared to pixel-space diffusion.}
     \label{fig:ldm_architecture}
 \end{figure}
-
-\begin{table}[htbp]
-\centering
-\begin{tabular}{lcc}
-\toprule
-\textbf{Aspect} & \textbf{Pixel Space (Exp.\ 1--3)} & \textbf{Latent Space (Exp.\ 4)} \\
-\midrule
-Training resolution & Native (28--128 px) & 32$\times$32 latents \\
-Effective output resolution & 28--128 px & 256$\times$256 px \\
-Input channels & 1 or 3 & 4 (VAE latent) \\
-Additional models & None & Pretrained VAE \\
-Memory per sample & $\propto H \times W$ & $\propto (H/8) \times (W/8)$ \\
-\bottomrule
-\end{tabular}
-\caption{Comparison of pixel-space and latent-space diffusion approaches (experiments 1-4).}
-\label{tab:pixel-vs-latent}
-\end{table}
 
 \subsubsection{Model Architecture}
 
@@ -284,70 +274,70 @@ At inference time, the generation process starts from random noise in latent spa
 
 \subsubsection{Results}
 
-\textbf{Training Convergence:}
+\paragraph{Training Convergence}
 
 The model was trained for 500 epochs. Figure~\ref{fig:celeba_training_loss} shows the training loss curve (from 0.370 to $\sim$0.255). The loss decreased rapidly during the first $\sim$50 epochs , then continued to decrease more gradually through the remaining epochs, reaching a final loss of $\sim$0.230 at epoch 500. The smooth, monotonic decrease indicates stable convergence of the latent diffusion training.
 
-\begin{figure}[htbp]
+\begin{figure}[H]
     \centering
     \includegraphics[width=0.7\textwidth,keepaspectratio]{../figures/experiments/experiment_4/training_loss.png}
     \caption[Training loss curve for CelebA latent diffusion model over 500 epochs]{Training loss curve for the CelebA latent diffusion model. The MSE loss in latent space decreases from 0.370 to 0.230 over 500 epochs, showing stable convergence.}
     \label{fig:celeba_training_loss}
 \end{figure}
 
-\textbf{Generated Samples:}
+\paragraph{Qualitative Evaluation}
 
-Figure~\ref{fig:celeba_generated_samples} shows generated face images from diverse attribute-based prompts. The model produces recognizable face structures with attribute-consistent features at 256$\times$256 resolution.
+\subparagraph{Inference Steps}
 
-\begin{figure}[htbp]
+Figure~\ref{fig:celeba_inference_steps} shows the progressive improvement in image quality as the number of denoising steps increases during inference.
+
+\begin{figure}[H]
     \centering
-    \includegraphics[width=0.85\textwidth,keepaspectratio]{../figures/placeholder.png}
-    \caption[Generated CelebA face images from attribute-based text prompts]{Generated 256$\times$256 face images using diverse attribute-based text prompts with guidance scale $w=2$. Each image is conditioned on a different combination of attributes.}
-    \label{fig:celeba_generated_samples}
+    \includegraphics[width=\textwidth,keepaspectratio]{../figures/experiments/experiment_4/inference_by_steps.png}
+    \caption[Inference progression by denoising steps]{Inference progression for a fixed prompt and seed showing examples at increasing denoising steps (left to right). Visual quality and attribute fidelity improve as the number of inference steps increases.}
+    \label{fig:celeba_inference_steps}
 \end{figure}
 
-\textbf{Guidance Scale Ablation:}
+\subparagraph{Guidance Scale}
 
-Figure~\ref{fig:celeba_guidance_ablation} shows the effect of varying the guidance scale on generated face images. Lower guidance scales ($w < 1$) produce blurry, less attribute-specific results, while moderate guidance ($w \approx 1.5$--$3$) yields the best balance between image quality and prompt adherence. Higher guidance scales ($w > 4$) tend to oversaturate features and reduce diversity.
+Figure~\ref{fig:celeba_guidance_ablation} shows the effect of varying the guidance scale on generated face images for a fixed prompt and seed. As the classifier-free guidance scale increases from 0 to 10, the generated images become progressively more aligned with the text prompt, with higher guidance scales producing sharper, more attribute-specific features. Lower guidance scales ($w < 1$) produce less defined results, while moderate to high guidance ($w \geq 1$) yields strong text-image alignment.
 
-\begin{figure}[htbp]
+\begin{figure}[H]
     \centering
-    \includegraphics[width=0.95\textwidth,keepaspectratio]{../figures/placeholder.png}
-    \caption[Effect of guidance scale on CelebA face generation]{Effect of guidance scale $w$ on CelebA face generation. Columns show $w \in \{0, 0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5\}$, rows show different prompts.}
+    \includegraphics[width=\textwidth,keepaspectratio]{../figures/experiments/experiment_4/inference_by_cfg.png}
+    \caption[Effect of classifier-free guidance scale on CelebA face generation]{Effect of classifier-free guidance (CFG) scale $w$ on face generation for a fixed prompt and seed. Higher guidance scales produce stronger text-prompt alignment and more pronounced attribute features}
     \label{fig:celeba_guidance_ablation}
+\end{figure}
+
+\subparagraph{Attribute Control --- Gender and Hair Color}
+
+Figure~\ref{fig:celeba_gender_hair} demonstrates attribute control through text conditioning. The model successfully generates faces with different combinations of gender (female/male) and hair color (blond, brown, black, red, gray), showing that the attribute-to-text caption system enables control over specific facial characteristics.
+
+We used the following simplified prompt templates:
+
+\begin{lstlisting}[language=Python, caption={Prompt templates for gender and hair color experiment}]
+genders = ["a young woman", "a young man"]
+hair_colours = ["with blonde hair", "with brown hair", "with black hair", "with red hair", "with gray hair"]
+
+for i, g in enumerate(genders):
+    for j, h in enumerate(hair_colours):
+        prompt = f"{g} {h}"
+        img = generate_images([prompt], num_inference_steps=FIG6_STEPS, seed=FIG6_SEED)[0]
+        ...
+\end{lstlisting}
+
+This generates prompts such as ``a young woman with blonde hair'', ``a young man with black hair'', etc.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth,keepaspectratio]{../figures/experiments/experiment_4/inference_by_gender_and_hair_color.png}
+    \caption[Attribute control: gender and hair color combinations]{Image generation from attribute-based prompts. Top row: female subjects with varying hair colors (blond, brown, black, red, gray). Bottom row: male subjects with the same hair color variations.}
+    \label{fig:celeba_gender_hair}
 \end{figure}
 
 % TODO: Add FID scores, CLIP scores, and attribute accuracy metrics after evaluation
 % \textbf{Quantitative Evaluation:}
 % FID Score, CLIP Score, and attribute accuracy to be added after running metrics notebook.
-
-\subsubsection{Comparison Across All Experiments}
-
-Table~\ref{tab:all-experiment-comparison} extends the earlier experiment comparison to include the CelebA latent diffusion experiment.
-
-\begin{table}[htbp]
-\centering
-\small
-\begin{tabular}{lcccc}
-\toprule
-\textbf{Aspect} & \textbf{MNIST} & \textbf{CIFAR-10} & \textbf{WikiArt} & \textbf{CelebA} \\
-\midrule
-Resolution & 28$\times$28 & 32$\times$32 & 128$\times$128 & 256$\times$256 \\
-Channels & 1 (grayscale) & 3 (RGB) & 3 (RGB) & 3 (RGB) \\
-Diffusion space & Pixel & Pixel & Pixel & Latent (32$\times$32$\times$4) \\
-Classes/Attributes & 10 digits & 10 objects & 27 styles & 40 binary attributes \\
-Training samples & 60,000 & 50,000 & $\sim$81,000 & $\sim$202,599 \\
-U-Net parameters & $\sim$3M & $\sim$45M & $\sim$150M & $\sim$90M \\
-Additional models & None & None & None & Pretrained VAE \\
-Batch size & 512 & 128 & 64 & 128 \\
-Learning rate & $10^{-3}$ & $10^{-4}$ & $10^{-5}$ & $10^{-5}$ \\
-Epochs & 20 & 50 & 100 & 500 \\
-Caption type & Fixed template & Fixed template & Fixed template & Attribute-based NLG \\
-\bottomrule
-\end{tabular}
-\caption{Comparison of experimental configurations across all four experiments: MNIST, CIFAR-10, WikiArt, and CelebA.}
-\label{tab:all-experiment-comparison}
-\end{table}
 
 \subsubsection{Key Observations}
 

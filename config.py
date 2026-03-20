@@ -227,7 +227,7 @@ TRAIN_CELEBA_LDM_CONFIG = {
 # =============================================================================
 
 INFERENCE_CONFIG = {
-    "num_inference_steps": 50,
+    "num_inference_steps": 500,
     "beta_schedule": "squaredcos_cap_v2",
     "num_train_timesteps": 1000,
 }
