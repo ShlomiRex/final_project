@@ -1,4 +1,5 @@
 \subsection{CelebA Latent Diffusion with Classifier-Free Guidance}
+\label{sec:celeba}
 
 \subsubsection{Objective}
 This experiment extends the text-to-image diffusion framework to the CelebA face dataset and introduces a fundamental architectural change: \emph{latent diffusion}. Unlike previous experiments (MNIST, CIFAR-10, WikiArt) that trained the denoising U-Net directly in pixel space, this experiment operates in a compressed latent representation produced by a pretrained Variational Autoencoder (VAE). This approach, inspired by Latent Diffusion Models (LDMs) \cite{rombach2022high}, enables training at an effective resolution of 256$\times$256 while maintaining computational costs comparable to the 32$\times$32 pixel-space models from earlier experiments.
