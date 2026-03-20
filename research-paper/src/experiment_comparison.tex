@@ -67,7 +67,7 @@ The principal trade-off is increased training complexity: the model must learn t
 
 The first three experiments operate directly in pixel space: the denoising U-Net takes noisy pixel tensors as input and outputs noise predictions in the same space. This is practical at low resolutions (28--128 pixels), but scaling to 256$\times$256 in pixel space would have required processing tensors of 196,608 elements per sample---a 48$\times$ increase over the 4,096-element 32$\times$32$\times$4 latents used in Experiment 4.
 
-Experiment 4 adopts a \emph{latent diffusion} approach inspired by LDMs~\cite{rombach2022high}: a frozen, pretrained VAE (\texttt{stabilityai/sd-vae-ft-mse}) compresses each 256$\times$256 RGB image to a 32$\times$32$\times$4 latent by an 8$\times$ spatial factor. The U-Net is trained entirely in this latent space and only the VAE decoder is used at inference time to reconstruct the final image. The consequences are significant:
+Experiment 4 adopts a \emph{latent diffusion} approach inspired by LDMs~\cite{rombach2022high}: a frozen, pretrained VAE (\url{stabilityai/sd-vae-ft-mse}) compresses each 256$\times$256 RGB image to a 32$\times$32$\times$4 latent by an 8$\times$ spatial factor. The U-Net is trained entirely in this latent space and only the VAE decoder is used at inference time to reconstruct the final image. The consequences are significant:
 
 \begin{itemize}
     \item \textbf{Memory efficiency:} GPU memory per sample scales with $(H/8)\times(W/8)$ rather than $H\times W$, making 256$\times$256 generation feasible within the same memory budget as 32$\times$32 pixel-space models.

@@ -78,11 +78,10 @@ A key challenge in conditioning CelebA generation on text is that the dataset pr
     
     \item \textbf{Collision resolution:} Contradictory attributes are handled by priority rules. For example, if both ``Black\_Hair'' and ``Brown\_Hair'' are active, only the higher-priority attribute is included. Similarly, ``Arched\_Eyebrows'' takes precedence over ``Bushy\_Eyebrows''.
     
-    \item \textbf{Structured assembly:} Captions follow a consistent structure: \texttt{``A photo of a <age> <gender> with <physical descriptors>, <expression>, <accessories>''}. Hair descriptions combine colour and style (e.g., ``straight blond hair''), and facial hair is handled as a separate clause.
+    \item \textbf{Structured assembly:} Captions follow a consistent structure: \texttt{`A photo of a <age> <gender> with <physical descriptors>, <expression>, <accessories>'}. Hair descriptions combine colour and style (e.g., ``straight blond hair''), and facial hair is handled as a separate clause.
     
     \item \textbf{Controlled randomness:} Minor facial features (e.g., ``Rosy\_Cheeks'', ``Narrow\_Eyes'') are included with 80\% probability per sample. Core attributes (gender, age, hair, expression, accessories) are always included when active.
-    
-    \item \textbf{No hallucination:} Inactive attributes are silently omitted --- the system never generates negative descriptions like ``no accessories'' or ``neutral expression''.
+
 \end{enumerate}
 
 \textbf{Example captions:}
@@ -142,21 +141,40 @@ def encode(self, images: torch.Tensor) -> torch.Tensor:
     return latents
 \end{lstlisting}
 
-During training, this encoding happens at the start of each batch, before noise is added:
+During training, encoding happens at the start of each batch. The full notebook implementation includes checkpoint resume, epoch-level loss logging, and periodic checkpoint saves. The simplified loop below captures the core pipeline without low-level details:
 
-\begin{lstlisting}[language=Python, caption={Training loop --- latent encoding per batch}]
-# Training loop (from train3_t2i_celeba_hq_ldm_cfg_500epochs.ipynb)
-for images, attributes in dataloader:
-    images = images.to(device)  # [B, 3, 256, 256]
+\begin{lstlisting}[language=Python, caption={Training loop --- high-level pipeline (simplified)}]
+# Resume state if a checkpoint exists
+global_step, start_epoch = load_training_state_if_available()
 
-    # Encode to latent space
-    latents = vae.encode(images)  # [B, 4, 32, 32]
+for epoch in range(start_epoch, NUM_EPOCHS):
+    unet.train()
 
-    # Now train diffusion model on latents (not pixels)
-    noise = torch.randn_like(latents)
-    timesteps = torch.randint(0, 1000, (B,))
-    noisy_latents = scheduler.add_noise(latents, noise, timesteps)
-    ...
+    for images, captions, _ in dataloader:
+        images = images.to(device)                      # [B, 3, 256, 256]
+        latents = vae.encode(images)                    # [B, 4, 32, 32]
+
+        # Sample noise and timesteps for the forward diffusion process
+        noise = torch.randn_like(latents)
+        t = sample_random_timesteps(batch_size=latents.shape[0])
+        # Add noise to latents according to the DDPM forward process
+        noisy_latents = noise_scheduler.add_noise(latents, noise, t)
+
+        # CFG training: replace some captions with empty string
+        captions_cfg = apply_cfg_dropout(captions, p=0.1)
+        text_emb = encode_text_with_clip(captions_cfg)  # [B, 77, 512]
+
+        # Predict noise with U-Net and compute loss in latent space
+        noise_pred = unet(noisy_latents, t, text_emb).sample
+        loss = mse(noise_pred, noise)
+
+        optimizer.zero_grad()
+        loss.backward()
+        optimizer.step()
+
+        ...
+
+    save_checkpoint_if_needed(epoch, global_step, avg_loss)
 \end{lstlisting}
 
 At inference time, the reverse process applies: the U-Net denoises random latents, and the VAE decoder converts the final denoised latents back to 3-channel RGB images:

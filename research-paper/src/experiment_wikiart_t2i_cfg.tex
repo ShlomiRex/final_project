@@ -280,7 +280,7 @@ images in total.
 \caption{Guidance scale search across all 27 WikiArt styles: CLIP Score (top), FID (bottom), and
 composite score $\hat{\text{CLIP}} - \hat{\text{FID}}$ (both min-max normalised) as functions of
 CFG weight $w \in \{0, 1, 2, 3, 5, 7.5, 10, 12.5, 15, 20\}$.  Best values per metric are at
-$w = 1.0$ (CLIP\,=\,0.2548, composite\,=\,0.468) and $w = 3.0$ (FID\,=\,259.1).  The dashed
+$w = 1.0$ and $w = 3.0$.  The dashed
 vertical line marks the recommended value $w = 1.0$ selected by the composite criterion.}
 \label{fig:wikiart-metrics-guidance}
 \end{figure}
@@ -324,7 +324,7 @@ Experiment 4 (\S\ref{sec:celeba-caption-generation}) show this more clearly.
 \centering
 \includegraphics[width=\textwidth,keepaspectratio]{../figures/experiments/experiment_3/visual_grid_guidance_vs_style.png}
 \caption{Visual grid of generated WikiArt images. Rows correspond to six representative art
-styles; columns correspond to guidance scales $w \in \{0, 1, 2, 3, 5, 7.5, 10, 12.5, 15, 20\}$. Images remain visually consistent across $w \in [0, 10]$;
+styles; columns correspond to guidance scales. Images remain visually consistent across $w \in [0, 10]$;
 Only at $w \geq 12.5$ do oversaturation and textural artefacts become apparent.}
 \label{fig:wikiart-visual-grid}
 \end{figure}
@@ -350,7 +350,7 @@ Impressionism'') and measured two complementary metrics:
 \centering
 \includegraphics[width=0.85\textwidth,keepaspectratio]{../figures/experiments/experiment_3/metrics_vs_steps.png}
 \caption{CLIP Score (top) and FID (bottom) as functions of the number of DDPM
-inference steps $T_{\text{inf}} \in \{1, 5, 10, 20, 50, 100, 200, 250, 300, 350\}$.}
+inference steps $T_{\text{inf}}$.}
 \label{fig:wikiart-metrics-steps}
 \end{figure}
 

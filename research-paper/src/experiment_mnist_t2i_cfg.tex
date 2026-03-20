@@ -67,7 +67,7 @@ The key design choice in the U-Net architecture is to train directly in pixel sp
 
 \textbf{Training Pipeline per Batch:}
 \begin{enumerate}
-    \item Convert digit labels to text captions using CLIP tokenizer. Format: \texttt{"A handwritten digit \{label\}"} where $label \in \{0, 1, ..., 9\}$
+    \item Convert digit labels to text captions using CLIP tokenizer. Format: \texttt{"A handwritten digit [label]"} where $label \in \{0, 1, ..., 9\}$
     \item Encode captions to semantic embeddings via frozen CLIP text encoder [batch, 8, 512]
     \item Sample random timestep $t \sim \text{Uniform}(0, 1000)$ for each image
     \item Add Gaussian noise to images: $x_t = \sqrt{\bar{\alpha}_t} x_0 + \sqrt{1-\bar{\alpha}_t} \epsilon$
