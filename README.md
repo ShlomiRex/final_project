@@ -8,6 +8,9 @@
 
 ---
 
+![Prompt2Face - CelebA results](image.png)
+
+
 ## Overview
 
 This project implements a text-to-image generation model based on **Stable Diffusion** with **CLIP embeddings** as the text conditioning mechanism and **Classifier-Free Guidance (CFG)**. The model operates in latent space via a Variational Autoencoder (VAE) for computational efficiency.
