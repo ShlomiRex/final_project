@@ -67,34 +67,13 @@ The principal trade-off is increased training complexity: the model must learn t
 
 The first three experiments operate directly in pixel space: the denoising U-Net takes noisy pixel tensors as input and outputs noise predictions in the same space. This is practical at low resolutions (28--128 pixels), but scaling to 256$\times$256 in pixel space would have required processing tensors of 196,608 elements per sample---a 48$\times$ increase over the 4,096-element 32$\times$32$\times$4 latents used in Experiment 4.
 
-Experiment 4 adopts a \emph{latent diffusion} approach inspired by LDMs~\cite{rombach2022high}: a frozen, pretrained VAE (\texttt{stabilityai/sd-vae-ft-mse}) compresses each 256$\times$256 RGB image to a 32$\times$32$\times$4 latent by an 8$\times$ spatial factor. The U-Net is trained entirely in this latent space and only the VAE decoder is used at inference time to reconstruct the final image. The consequences are significant:
+Experiment 4 adopts a \emph{latent diffusion} approach inspired by LDMs~\cite{rombach2022high}. A frozen, pretrained VAE (\url{stabilityai/sd-vae-ft-mse}) compresses each 256$\times$256 RGB image to a 32$\times$32$\times$4 latent by an 8$\times$ spatial factor. The U-Net is trained entirely in this latent space and only the VAE decoder is used at inference time to reconstruct the final image. The consequences are significant:
 
 \begin{itemize}
     \item \textbf{Memory efficiency:} GPU memory per sample scales with $(H/8)\times(W/8)$ rather than $H\times W$, making 256$\times$256 generation feasible within the same memory budget as 32$\times$32 pixel-space models.
-    \item \textbf{Perceptual quality:} The VAE's decoder provides powerful upsampling and texture synthesis, so the diffusion model need only capture low-frequency structure and semantics in latent space.
-    \item \textbf{Training stability:} The training loss in latent space exhibited smooth, monotonic convergence (from 0.370 to 0.230 over 500 epochs), which stands in contrast to the oscillations sometimes observed in pixel-space diffusion at higher resolutions.
-    \item \textbf{Additional dependency:} The latent diffusion approach introduces a pretrained VAE as a frozen component. This adds a model to load and maintain, and the quality of reconstructed images is upper-bounded by the VAE's reconstruction fidelity.
+    \item \textbf{Training stability:} The training loss in latent space exhibited smooth, monotonic convergence, which stands in contrast to the oscillations sometimes observed in pixel-space diffusion at higher resolutions.
+    \item \textbf{Frozen model dependency:} The latent diffusion approach introduces a pretrained VAE as a frozen component. This adds a model to load and maintain, and the quality of reconstructed images is upper-bounded by the VAE's reconstruction fidelity.
 \end{itemize}
-
-\subsection{Classifier-Free Guidance Across Experiments}
-
-All four experiments support classifier-free guidance (CFG) at inference time, but there is an important training-time difference between Experiment 1 and the remaining three:
-
-\begin{itemize}
-    \item \textbf{Experiment 1 (MNIST):} The model was trained \emph{without} unconditional dropout. CFG was applied post-hoc at inference by computing conditional and unconditional predictions using the trained model. This creates a training-inference distribution mismatch: the model never encountered empty-string embeddings during training, so the unconditional branch is effectively an approximation. As noted in the MNIST key findings, this mismatch manifested as slightly noisier outputs at moderate guidance scales ($w=5$) compared to the non-CFG baseline.
-    
-    \item \textbf{Experiments 2--4 (CIFAR-10, WikiArt, CelebA):} Training explicitly incorporated 10\% unconditional dropout, randomly replacing text embeddings with the null (empty-string) embedding. This ensures the model learns a well-calibrated unconditional prediction, eliminating the distribution mismatch and producing cleaner guided samples.
-\end{itemize}
-
-For CIFAR-10, quantitative evaluation across guidance scales showed that FID was minimised at $w=2$ (56.28), while classification accuracy peaked at $w=10$ (16.5\%). This illustrates the fundamental CFG trade-off: higher guidance scales improve prompt adherence but reduce sample diversity and increase visual artifacts such as overexposed colours and exaggerated features.
-
-\subsection{Engineering Challenges at Scale}
-
-Training at scale introduced practical engineering challenges that did not arise in the simpler experiments.
-
-\textbf{WikiArt data loading.} The WikiArt dataset ($\sim$32 GB across 72 Parquet files) could not be efficiently loaded with standard random-access \texttt{DataLoader} shuffling: each random-index batch request required loading up to 16 different 400 MB files, causing batch times of 10--15 seconds and leaving the A100 GPU largely idle (data loading accounted for 70.4\% of training time at batch size 16). A custom file-sequential \texttt{IterableDataset} reduced batch times to 0.1--0.5 seconds by loading files sequentially and shuffling only within each file, yielding a 3.7$\times$ epoch speedup and reducing total training time from $\sim$15.4 days to $\sim$4.1 days.
-
-\textbf{CelebA caption generation.} Generating natural language captions from 40 binary attributes required a bespoke NLG system with paraphrase tables, collision resolution rules, and probabilistic inclusion of minor features. This was a significant implementation overhead compared to the single-line template used in Experiments 1--3, but was essential for providing the conditioning diversity needed to train a fine-grained attribute-controllable model.
 
 \subsection{Key Takeaways}
 
@@ -102,10 +81,6 @@ Training at scale introduced practical engineering challenges that did not arise
     \item \textbf{A unified architecture scales across four orders of magnitude in dataset complexity.} The same core design --- frozen CLIP text encoder, cross-attention U-Net, DDPM scheduler, CFG --- was applied without fundamental changes from 28$\times$28 grayscale digits to 256$\times$256 celebrity faces, demonstrating the generality of the text-conditioned diffusion paradigm.
 
     \item \textbf{Latent diffusion is essential for high-resolution generation under practical compute budgets.} Pixel-space diffusion is viable up to $\sim$128$\times$128; beyond that, the memory and compute cost grows quadratically. Offloading spatial compression to a frozen pretrained VAE decouples resolution scaling from U-Net size.
-
-    \item \textbf{CFG should be incorporated at training time, not applied post-hoc.} The MNIST experiment demonstrated that applying CFG to a model not trained with unconditional dropout introduces a distribution mismatch that degrades output quality. All subsequent experiments incorporated 10\% unconditional dropout from the start.
-
-    \item \textbf{Caption richness directly affects conditioning quality.} The progression from 10-class fixed templates to 40-attribute NLG captions reflects a deepening understanding of what the text conditioning pathway can express. Richer, more varied captions improve both training-time supervision and inference-time controllability, at the cost of greater implementation complexity.
 
     \item \textbf{Data engineering effort grows with dataset scale.} The WikiArt data-loading bottleneck and the CelebA NLG system both illustrate that, at scale, the engineering work surrounding training data preparation can exceed the effort spent on model architecture design. Efficient data pipelines are as important as model choices for practical training.
 \end{enumerate}
